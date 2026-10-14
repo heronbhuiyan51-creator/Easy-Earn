@@ -1,0 +1,3464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Easy Earn — Smart Entertainment & Investment</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Firebase Modular / Compat SDK v10 -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            purple: '#6d28d9',
+            indigo: '#4f46e5',
+            blue: '#2563eb',
+            pink: '#ec4899',
+            gold: '#f59e0b',
+            dark: '#0f172a'
+          }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hind Siliguri', sans-serif;
+    overscroll-behavior-y: none;
+    background-color: #f3f4f9;
+  }
+  .gradient-header {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #3b82f6 100%);
+  }
+  .gradient-btn {
+    background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
+    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+  }
+  .gradient-btn:active {
+    transform: scale(0.98);
+  }
+  .gradient-card-team {
+    background: linear-gradient(135deg, #5b21b6 0%, #7c3aed 50%, #ec4899 100%);
+  }
+  .gradient-vip-card {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 60%, #06b6d4 100%);
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+  }
+  .card-shadow {
+    box-shadow: 0 8px 24px -4px rgba(124, 58, 237, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04);
+  }
+  .card-shadow-lg {
+    box-shadow: 0 12px 32px -4px rgba(99, 102, 241, 0.16);
+  }
+  .ticker-wrap {
+    overflow: hidden;
+    white-space: nowrap;
+    position: relative;
+  }
+  .ticker-text {
+    display: inline-block;
+    padding-left: 100%;
+    animation: ticker 18s linear infinite;
+  }
+  @keyframes ticker {
+    0% { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-100%, 0, 0); }
+  }
+  .banner-slider {
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  .banner-item {
+    scroll-snap-align: center;
+    flex-shrink: 0;
+  }
+  /* Floating Spin Wheel */
+  .floating-wheel {
+    position: fixed;
+    left: 8px;
+    bottom: 90px;
+    z-index: 40;
+    cursor: pointer;
+    animation: floatAnim 3s ease-in-out infinite;
+  }
+  @keyframes floatAnim {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-6px) rotate(3deg); }
+  }
+  .spin-anim {
+    animation: spinAround 4s cubic-bezier(0.15, 0.9, 0.2, 1) forwards;
+  }
+  @keyframes spinAround {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(1800deg); }
+  }
+  .modal-overlay {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
+  }
+  .slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .fade-in {
+    animation: fadeIn 0.25s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .tab-btn.active {
+    background: linear-gradient(135deg, #7c3aed 0%, #3b82f6 100%);
+    color: white;
+    font-weight: 700;
+  }
+  .badge-hot {
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  }
+  .badge-active {
+    background: #10b981;
+  }
+  .badge-locked {
+    background: #9ca3af;
+  }
+  .pulse-dot {
+    animation: pulseGlow 2s infinite;
+  }
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.2); }
+  }
+</style>
+</head>
+<body class="text-slate-800 antialiased max-w-md mx-auto min-h-screen relative flex flex-col shadow-2xl bg-[#f7f8fc]">
+
+<!-- ======================== TOAST NOTIFICATIONS ======================== -->
+<div id="toast-container" class="fixed top-4 left-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none max-w-md mx-auto"></div>
+
+<!-- ======================== GLOBAL MODAL OVERLAY ======================== -->
+<div id="modal-overlay" class="modal-overlay fixed inset-0 z-50 hidden" onclick="closeAllModals()"></div>
+
+<!-- ======================== APP HEADER (SHOWN WHEN LOGGED IN) ======================== -->
+<header id="app-header" class="bg-white/95 backdrop-blur-md sticky top-0 z-40 px-4 py-2.5 border-b border-slate-100 flex items-center justify-between shadow-xs hidden">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 rounded-xl gradient-header flex items-center justify-center text-white font-black text-lg shadow-sm">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+    </div>
+    <div class="leading-tight">
+      <div class="flex items-center gap-1.5">
+        <span class="font-extrabold text-base tracking-tight bg-gradient-to-r from-purple-700 to-blue-600 bg-clip-text text-transparent">MXQ</span>
+        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Dev</span>
+      </div>
+      <span class="text-[10px] text-slate-400 font-medium" id="header-subtitle">Easy Earn Network</span>
+    </div>
+  </div>
+  
+  <div class="flex items-center gap-1.5">
+    <!-- Currency Selector -->
+    <div class="relative">
+      <button onclick="toggleCurrencyMenu()" id="currency-badge-btn" class="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-full transition-colors border border-slate-200">
+        <span id="current-currency-display">BDT (৳)</span>
+        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="currency-dropdown" class="absolute right-0 mt-1 w-28 bg-white rounded-xl shadow-lg border border-slate-100 py-1 hidden z-50">
+        <button onclick="setCurrency('BDT')" class="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-purple-50 flex items-center justify-between">
+          <span>BDT (৳)</span>
+          <span class="text-[10px] text-purple-600 font-semibold">Base</span>
+        </button>
+        <button onclick="setCurrency('USD')" class="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-purple-50 flex items-center justify-between">
+          <span>USD ($)</span>
+          <span class="text-[10px] text-slate-400 font-normal">1:120</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Language Selector -->
+    <div class="relative">
+      <button onclick="toggleLangMenu()" id="lang-badge-btn" class="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-full transition-colors border border-slate-200">
+        <span id="current-lang-display">🇬🇧 EN</span>
+        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+      </button>
+      <div id="lang-dropdown" class="absolute right-0 mt-1 w-28 bg-white rounded-xl shadow-lg border border-slate-100 py-1 hidden z-50">
+        <button onclick="setLanguage('en')" class="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-purple-50 flex items-center gap-1.5">
+          <span>🇬🇧</span> English
+        </button>
+        <button onclick="setLanguage('bn')" class="w-full text-left px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-purple-50 flex items-center gap-1.5">
+          <span>🇧🇩</span> বাংলা
+        </button>
+      </div>
+    </div>
+
+    <!-- Notification Bell -->
+    <button onclick="openNoticeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-600 hover:text-purple-600 hover:bg-purple-50 flex items-center justify-center transition-colors relative">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
+    </button>
+  </div>
+</header>
+
+<!-- ======================== FLOATING SPIN & WIN BADGE ======================== -->
+<div class="floating-wheel" onclick="openSpinModal()" title="Spin & Win" id="floating-spin-btn">
+  <div class="relative w-16 h-16 flex items-center justify-center">
+    <div class="absolute inset-0 rounded-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 p-0.5 shadow-xl animate-spin" style="animation-duration: 8s;">
+      <div class="w-full h-full rounded-full bg-slate-900/90 flex items-center justify-center"></div>
+    </div>
+    <div class="relative z-10 flex flex-col items-center">
+      <span class="text-xl">🎡</span>
+      <span class="text-[8px] font-black tracking-tighter text-amber-300 uppercase leading-none drop-shadow">SPIN & WIN</span>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== AUTH SCREEN (LOGIN / REGISTER) ======================== -->
+<section id="auth-screen" class="min-h-screen flex flex-col justify-between bg-gradient-to-b from-indigo-50/50 to-white px-4 py-6">
+  <!-- Top Header with Brand & Language -->
+  <div class="flex items-center justify-between mb-4">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg gradient-header flex items-center justify-center text-white font-bold text-sm">EE</div>
+      <div>
+        <span class="font-extrabold text-base bg-gradient-to-r from-purple-700 to-blue-600 bg-clip-text text-transparent">MXQ TV BOX</span>
+        <span class="text-xs font-semibold text-slate-400 ml-1">Dev</span>
+      </div>
+    </div>
+    <!-- Language Toggle in Auth -->
+    <button onclick="toggleLanguage()" class="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-1 rounded-full text-xs font-bold text-slate-700 shadow-xs">
+      <span id="auth-lang-flag">🌐</span>
+      <span id="auth-lang-label">English</span>
+      <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </button>
+  </div>
+
+  <!-- Auth Tab Switcher Pills -->
+  <div class="bg-slate-100 p-1 rounded-2xl flex max-w-xs mx-auto w-full mb-4">
+    <button onclick="switchAuthTab('login')" id="auth-pill-login" class="flex-1 py-2 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm">
+      Sign In
+    </button>
+    <button onclick="switchAuthTab('register')" id="auth-pill-register" class="flex-1 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-800">
+      Register
+    </button>
+  </div>
+
+  <!-- Promotional Entertainment Box Hero Banner (Matching Screenshots) -->
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-purple-950 to-slate-900 text-white p-4 mb-5 shadow-lg border border-purple-900/30">
+    <div class="flex items-center justify-between gap-3">
+      <div class="flex-1 z-10">
+        <div class="inline-block bg-pink-600/30 border border-pink-500/50 text-pink-300 text-[10px] font-black uppercase px-2 py-0.5 rounded-md mb-1.5">
+          4K ULTRA HD
+        </div>
+        <h2 class="text-lg font-black tracking-tight leading-tight bg-gradient-to-r from-pink-400 via-purple-300 to-indigo-200 bg-clip-text text-transparent">
+          MXQ TV BOX
+        </h2>
+        <p class="text-[11px] text-purple-200/80 font-medium mt-0.5" id="banner-tagline">
+          Upgrade Your TV • Upgrade Your Life
+        </p>
+        <p class="text-[10px] text-slate-400 mt-1 line-clamp-2">
+          Transform your ordinary TV into a Smart Entertainment Center. Stream YouTube, Netflix, Disney+ & earn daily.
+        </p>
+      </div>
+      <!-- SVG MXQ Box & Remote Illustration -->
+      <div class="relative w-28 h-24 shrink-0 flex items-center justify-center">
+        <!-- TV Box Body -->
+        <div class="w-20 h-16 rounded-xl bg-gradient-to-br from-slate-800 to-slate-950 border border-purple-500/40 shadow-xl flex flex-col justify-between p-1.5 relative">
+          <div class="flex justify-between items-center">
+            <span class="text-[7px] font-black text-purple-400 tracking-wider">MXQ</span>
+            <div class="w-1.5 h-1.5 rounded-full bg-cyan-400 pulse-dot"></div>
+          </div>
+          <div class="text-center font-mono text-[9px] font-black text-cyan-300 tracking-widest bg-black/40 py-0.5 rounded">
+            09:58
+          </div>
+          <div class="flex gap-1 justify-center">
+            <div class="w-2 h-0.5 bg-purple-500 rounded"></div>
+            <div class="w-2 h-0.5 bg-blue-500 rounded"></div>
+          </div>
+        </div>
+        <!-- Remote Control Overlay -->
+        <div class="absolute -right-1 bottom-0 w-8 h-20 rounded-lg bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-700 shadow-2xl p-1 flex flex-col items-center justify-between rotate-12">
+          <div class="w-2 h-2 rounded-full bg-red-500/80"></div>
+          <div class="grid grid-cols-2 gap-0.5 my-1">
+            <div class="w-1.5 h-1.5 bg-slate-700 rounded-xs"></div>
+            <div class="w-1.5 h-1.5 bg-slate-700 rounded-xs"></div>
+            <div class="w-1.5 h-1.5 bg-red-600 rounded-xs"></div>
+            <div class="w-1.5 h-1.5 bg-slate-700 rounded-xs"></div>
+          </div>
+          <span class="text-[5px] font-bold text-slate-400">MXQ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Form Container Card -->
+  <div class="bg-white rounded-3xl p-6 card-shadow border border-slate-100 flex-1 flex flex-col justify-center">
+    <!-- LOGIN FORM -->
+    <div id="login-form-view">
+      <!-- Mobile Number Field -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" id="login-phone-label">Mobile Number</label>
+        <div class="flex rounded-2xl border border-slate-200 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-100 transition-all overflow-hidden bg-slate-50/50">
+          <div class="bg-slate-100 px-3 py-3 flex items-center gap-1.5 text-xs font-bold text-slate-700 border-r border-slate-200 shrink-0">
+            <span>🇧🇩</span>
+            <span>+880</span>
+            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+          </div>
+          <input type="tel" id="login-phone" value="01811754943" maxlength="11" class="flex-1 px-4 py-3 text-sm bg-transparent outline-none font-medium text-slate-800" placeholder="Please enter mobile number">
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" id="login-pass-label">Login Password</label>
+        <div class="relative flex items-center rounded-2xl border border-slate-200 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-100 transition-all bg-slate-50/50">
+          <div class="pl-3.5 pr-2 text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+          </div>
+          <input type="password" id="login-password" value="123456" class="flex-1 py-3 text-sm bg-transparent outline-none font-medium text-slate-800" placeholder="Please enter login password">
+          <button type="button" onclick="togglePasswordVisibility('login-password', 'eye-login-icon')" class="pr-3.5 text-slate-400 hover:text-slate-600">
+            <svg id="eye-login-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Graphic Verification Code (CAPTCHA) -->
+      <div class="mb-5">
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" id="login-captcha-label">Graphic verification code</label>
+        <div class="flex items-center gap-2">
+          <div class="flex-1 flex items-center rounded-2xl border border-slate-200 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-100 transition-all bg-slate-50/50">
+            <div class="pl-3.5 pr-2 text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <input type="text" id="login-captcha-input" maxlength="4" class="flex-1 py-3 text-sm bg-transparent outline-none font-bold text-slate-800 tracking-wider uppercase" placeholder="Enter code">
+          </div>
+          <!-- Stylized Purple/Blue Captcha Box matching screenshot -->
+          <div onclick="generateCaptcha('login')" class="cursor-pointer shrink-0 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2.5 shadow-md flex items-center justify-center select-none active:scale-95 transition-transform" title="Click to refresh">
+            <canvas id="login-captcha-canvas" width="80" height="30" class="rounded pointer-events-none"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Login Submit Button -->
+      <button onclick="handleLoginSubmit()" id="btn-login-submit" class="w-full gradient-btn text-white py-3.5 rounded-2xl font-black text-base flex items-center justify-center gap-2 mb-3">
+        <span id="login-btn-text">Login Now</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      </button>
+
+      <!-- Auth Links -->
+      <div class="flex items-center justify-between text-xs font-bold pt-1">
+        <a href="javascript:void(0)" onclick="openForgotPasswordModal()" class="text-blue-600 hover:text-blue-700" id="link-forgot-pass">Forgot password?</a>
+        <a href="javascript:void(0)" onclick="switchAuthTab('register')" class="text-pink-600 hover:text-pink-700 flex items-center gap-1" id="link-create-act">
+          <span>Create Account</span>
+          <span>→</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div id="register-form-view" class="hidden">
+      <!-- Mobile Number -->
+      <div class="mb-3.5">
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="reg-phone-label">Mobile Number</label>
+        <div class="flex rounded-2xl border border-slate-200 focus-within:border-purple-500 overflow-hidden bg-slate-50/50">
+          <div class="bg-slate-100 px-3 py-2.5 flex items-center gap-1 text-xs font-bold text-slate-700 border-r border-slate-200">
+            <span>🇧🇩</span><span>+880</span>
+          </div>
+          <input type="tel" id="reg-phone" maxlength="11" class="flex-1 px-3 py-2.5 text-sm bg-transparent outline-none font-medium" placeholder="01XXXXXXXXX">
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-3.5">
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="reg-pass-label">Set Password</label>
+        <input type="password" id="reg-password" class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 text-sm bg-slate-50/50 outline-none focus:border-purple-500" placeholder="Min. 6 characters">
+      </div>
+
+      <!-- Confirm Password -->
+      <div class="mb-3.5">
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="reg-confirm-label">Confirm Password</label>
+        <input type="password" id="reg-confirm" class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 text-sm bg-slate-50/50 outline-none focus:border-purple-500" placeholder="Re-enter password">
+      </div>
+
+      <!-- Referral Code -->
+      <div class="mb-3.5">
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="reg-ref-label">Invitation Code (Optional)</label>
+        <input type="text" id="reg-referral" class="w-full px-3.5 py-2.5 rounded-2xl border border-slate-200 text-sm bg-slate-50/50 outline-none uppercase font-mono" placeholder="Enter referral code">
+      </div>
+
+      <!-- Verification Code -->
+      <div class="mb-4">
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="reg-captcha-label">Verification Code</label>
+        <div class="flex items-center gap-2">
+          <input type="text" id="reg-captcha-input" maxlength="4" class="flex-1 px-3.5 py-2.5 rounded-2xl border border-slate-200 text-sm bg-slate-50/50 outline-none uppercase font-bold" placeholder="Enter code">
+          <div onclick="generateCaptcha('reg')" class="cursor-pointer shrink-0 rounded-2xl bg-gradient-to-r from-purple-600 to-blue-600 px-3 py-2 shadow-md">
+            <canvas id="reg-captcha-canvas" width="80" height="28" class="rounded pointer-events-none"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="handleRegisterSubmit()" id="btn-reg-submit" class="w-full gradient-btn text-white py-3.5 rounded-2xl font-black text-base flex items-center justify-center gap-2 mb-3">
+        <span id="reg-btn-text">Register Account</span>
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+      </button>
+
+      <div class="text-center text-xs font-bold pt-1">
+        <a href="javascript:void(0)" onclick="switchAuthTab('login')" class="text-purple-600 hover:text-purple-700" id="link-have-act">Already have an account? Sign In</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Copyright Footer -->
+  <div class="text-center text-[11px] text-slate-400 font-medium py-3">
+    © 2026 Dev — All Rights Reserved
+  </div>
+</section>
+
+<!-- ======================== MAIN PORTAL (TABS) ======================== -->
+<main id="main-app" class="flex-1 pb-24 hidden">
+
+  <!-- ======================== TAB 1: HOME ======================== -->
+  <section id="tab-home" class="tab-pane px-4 pt-3 space-y-4">
+    <!-- Promotional Image Carousel (MXQ Entertainment theme) -->
+    <div class="relative overflow-hidden rounded-3xl bg-slate-900 shadow-lg">
+      <div id="home-carousel-container" class="flex banner-slider overflow-x-auto no-scrollbar scroll-smooth">
+        <!-- Slide 1: MXQ Android TV Box -->
+        <div class="banner-item w-full shrink-0 relative bg-gradient-to-br from-slate-950 via-purple-950 to-indigo-950 text-white p-5 min-h-[160px] flex items-center justify-between">
+          <div class="z-10 max-w-[65%]">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="text-xs font-black tracking-widest text-pink-400 uppercase">MXQ 4K PRO</span>
+              <span class="text-[9px] bg-cyan-500/20 text-cyan-300 font-bold px-1.5 py-0.5 rounded">NEW</span>
+            </div>
+            <h3 class="text-lg font-black leading-tight bg-gradient-to-r from-white via-purple-100 to-pink-200 bg-clip-text text-transparent">
+              Smarter Entertainment<br>Endless Possibilities
+            </h3>
+            <p class="text-[11px] text-slate-300 mt-1">
+              Dual WiFi • Android 12 • Ultra HD Streaming
+            </p>
+            <button onclick="switchTab('product')" class="mt-2.5 bg-gradient-to-r from-pink-500 to-purple-600 text-white text-[11px] font-black px-3 py-1.5 rounded-full shadow-md">
+              Explore Products →
+            </button>
+          </div>
+          <!-- Box graphic -->
+          <div class="relative w-24 h-24 flex items-center justify-center">
+            <div class="w-20 h-16 rounded-xl bg-slate-900 border border-purple-500/50 shadow-2xl flex flex-col justify-between p-2">
+              <span class="text-[8px] font-black text-pink-400">MXQ</span>
+              <div class="text-[9px] font-mono text-cyan-300 font-bold bg-black/50 text-center py-0.5 rounded">4K UHD</div>
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 self-end pulse-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slide 2: Daily Yields & Commission -->
+        <div class="banner-item w-full shrink-0 relative bg-gradient-to-br from-blue-950 via-indigo-900 to-purple-950 text-white p-5 min-h-[160px] flex items-center justify-between">
+          <div class="z-10 max-w-[65%]">
+            <span class="text-xs font-black tracking-widest text-amber-300 uppercase mb-1 block">DAILY RETURNS</span>
+            <h3 class="text-lg font-black leading-tight">
+              Invest Today,<br>Earn Every Single Day!
+            </h3>
+            <p class="text-[11px] text-indigo-200 mt-1">
+              Transparent cycles with verified profit distribution.
+            </p>
+            <button onclick="openRechargeModal()" class="mt-2.5 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-[11px] font-black px-3 py-1.5 rounded-full shadow-md">
+              Recharge Now ⚡
+            </button>
+          </div>
+          <div class="text-5xl">🌾</div>
+        </div>
+
+        <!-- Slide 3: 3-Tier Referral Commissions -->
+        <div class="banner-item w-full shrink-0 relative bg-gradient-to-br from-purple-950 via-pink-900 to-rose-950 text-white p-5 min-h-[160px] flex items-center justify-between">
+          <div class="z-10 max-w-[65%]">
+            <span class="text-xs font-black tracking-widest text-emerald-300 uppercase mb-1 block">TEAM NETWORK</span>
+            <h3 class="text-lg font-black leading-tight">
+              Earn Up To 17%<br>Multi-Tier Commission
+            </h3>
+            <p class="text-[11px] text-pink-200 mt-1">
+              Level A: 10% • Level B: 5% • Level C: 2%
+            </p>
+            <button onclick="switchTab('team')" class="mt-2.5 bg-gradient-to-r from-emerald-400 to-teal-500 text-slate-950 text-[11px] font-black px-3 py-1.5 rounded-full shadow-md">
+              View My Team 👥
+            </button>
+          </div>
+          <div class="text-5xl">🎁</div>
+        </div>
+      </div>
+
+      <!-- Carousel Dots -->
+      <div class="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+        <button onclick="scrollToSlide(0)" class="carousel-dot w-5 h-1.5 rounded-full bg-purple-500 transition-all"></button>
+        <button onclick="scrollToSlide(1)" class="carousel-dot w-2 h-1.5 rounded-full bg-white/50 transition-all"></button>
+        <button onclick="scrollToSlide(2)" class="carousel-dot w-2 h-1.5 rounded-full bg-white/50 transition-all"></button>
+      </div>
+    </div>
+
+    <!-- Announcement Ticker -->
+    <div class="bg-amber-50/80 border border-amber-200/60 rounded-2xl p-2.5 flex items-center gap-2.5 shadow-2xs">
+      <div class="bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[10px] font-black uppercase px-2.5 py-1 rounded-xl shrink-0 tracking-wider shadow-xs" id="ticker-badge">
+        NOTICE
+      </div>
+      <div class="ticker-wrap flex-1">
+        <div class="ticker-text text-xs text-amber-950 font-bold" id="announcement-ticker-text">
+          🎉 Welcome to Easy Earn! Activate Hope rices packages, earn daily yields, and build your referral team today! Minimum withdrawal is ৳100 / $0.83.
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Services Grid (8 Services matching Screenshot 2) -->
+    <div>
+      <div class="flex items-center justify-between mb-2.5 px-0.5">
+        <h3 class="font-extrabold text-sm text-slate-800" id="qs-title">Quick Services</h3>
+        <span class="text-[11px] text-slate-400 font-semibold" id="qs-subtitle">Instant Access</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2.5">
+        <!-- 1. Recharge -->
+        <button onclick="openRechargeModal()" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-recharge">Recharge</span>
+        </button>
+
+        <!-- 2. Withdraw -->
+        <button onclick="openWithdrawModal()" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-withdraw">Withdraw</span>
+        </button>
+
+        <!-- 3. My Product -->
+        <button onclick="openMyProductsModal()" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-myproduct">My Product</span>
+        </button>
+
+        <!-- 4. Commission -->
+        <button onclick="switchTab('team')" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-commission">Commission</span>
+        </button>
+
+        <!-- 5. Download App -->
+        <button onclick="downloadAppPrompt()" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-download">Download</span>
+        </button>
+
+        <!-- 6. Online Support -->
+        <button onclick="openSupportModal()" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-online">Online</span>
+        </button>
+
+        <!-- 7. Invitation -->
+        <button onclick="shareReferralPrompt()" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-invitation">Invitation</span>
+        </button>
+
+        <!-- 8. Agent Salary -->
+        <button onclick="openAgentSalaryModal()" class="bg-white rounded-2xl p-3 flex flex-col items-center gap-1.5 card-shadow active:scale-95 transition-transform border border-slate-100">
+          <div class="w-11 h-11 rounded-full bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center text-white shadow-md">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          </div>
+          <span class="text-[11px] font-bold text-slate-700 text-center" id="qs-salary">Agent Salary</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Official Entertainment Media Showcase (Matching Screenshot 2) -->
+    <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100">
+      <div class="flex items-center justify-between mb-2">
+        <h4 class="font-extrabold text-xs text-slate-800 flex items-center gap-1.5" id="official-video-title">
+          <span class="text-pink-500">▶</span> Official Video & Showcase
+        </h4>
+        <span class="text-[10px] text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded-full">4K Media</span>
+      </div>
+      <div class="relative rounded-2xl overflow-hidden bg-slate-900 aspect-video flex items-center justify-center text-white border border-slate-800">
+        <!-- Media Poster Background -->
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-slate-900/60 to-purple-900/40"></div>
+        <div class="relative z-10 flex flex-col items-center text-center p-4">
+          <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white mb-2 shadow-lg hover:scale-105 transition-transform cursor-pointer" onclick="showToast('Playing product demonstration...', 'info')">
+            <svg class="w-6 h-6 fill-current translate-x-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+          </div>
+          <span class="text-xs font-black tracking-wide text-white">MXQ PRO 4K SETUP & EARNING GUIDE</span>
+          <span class="text-[10px] text-slate-300 mt-0.5">Learn how to activate packages & withdraw daily</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Featured Investment Packages Preview -->
+    <div>
+      <div class="flex items-center justify-between mb-2.5 px-0.5">
+        <h3 class="font-extrabold text-sm text-slate-800" id="featured-pkg-title">Featured Packages</h3>
+        <button onclick="switchTab('product')" class="text-xs font-bold text-purple-600 hover:text-purple-700 flex items-center gap-0.5" id="see-all-pkg-btn">
+          <span>See All</span>
+          <span>→</span>
+        </button>
+      </div>
+      <div id="home-featured-packages-list" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== TAB 2: INVESTMENT PRODUCTS ======================== -->
+  <section id="tab-product" class="tab-pane px-4 pt-3 space-y-3 hidden">
+    <!-- Top Back Title -->
+    <div class="flex items-center gap-2 mb-1">
+      <button onclick="switchTab('home')" class="w-8 h-8 rounded-full bg-white text-slate-600 flex items-center justify-center card-shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="font-black text-base text-slate-800" id="product-page-title">Investment Products</h2>
+    </div>
+
+    <!-- Category Filter Pills (Matching Screenshot 3) -->
+    <div class="flex gap-2 overflow-x-auto no-scrollbar py-1">
+      <button onclick="setProductFilter('Fixed Yields')" class="product-filter-pill px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm shrink-0" data-category="Fixed Yields" id="filter-pill-fixed">
+        Fixed Yields
+      </button>
+      <button onclick="setProductFilter('Flexible Rates')" class="product-filter-pill px-4 py-2 rounded-full text-xs font-bold transition-all bg-white text-slate-600 border border-slate-200 shrink-0" data-category="Flexible Rates" id="filter-pill-flexible">
+        Flexible Rates
+      </button>
+      <button onclick="setProductFilter('Limited Offers')" class="product-filter-pill px-4 py-2 rounded-full text-xs font-bold transition-all bg-white text-slate-600 border border-slate-200 shrink-0" data-category="Limited Offers" id="filter-pill-limited">
+        Limited Offers
+      </button>
+    </div>
+
+    <!-- Risk Disclosure Banner (Mandatory Requirement) -->
+    <div class="bg-amber-50/90 border border-amber-200 rounded-2xl p-3 text-[11px] text-amber-900 leading-snug">
+      <div class="font-bold flex items-center gap-1 text-amber-800 mb-0.5">
+        <span>⚠️</span>
+        <span id="risk-disclosure-title">Risk Disclosure & Illustrative Assumptions</span>
+      </div>
+      <p id="risk-disclosure-body" class="text-amber-800/90">
+        All return figures shown below are illustrative, unverified assumptions for demonstration. Returns are not guaranteed. Invest responsibly within your financial capacity.
+      </p>
+    </div>
+
+    <!-- Product Cards List -->
+    <div id="product-cards-container" class="space-y-3.5">
+      <!-- Rendered dynamically -->
+    </div>
+  </section>
+
+  <!-- ======================== TAB 3: VIP MEMBERSHIP ======================== -->
+  <section id="tab-vip" class="tab-pane px-4 pt-3 space-y-4 hidden">
+    <!-- Top Back Title -->
+    <div class="flex items-center gap-2 mb-1">
+      <button onclick="switchTab('home')" class="w-8 h-8 rounded-full bg-white text-slate-600 flex items-center justify-center card-shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="font-black text-base text-slate-800" id="vip-page-title">VIP System & Privilege</h2>
+    </div>
+
+    <!-- VIP Hero Status Card (Matching Screenshot 1) -->
+    <div class="gradient-vip-card rounded-3xl p-5 text-white shadow-lg relative overflow-hidden">
+      <!-- Decorative background blur -->
+      <div class="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
+
+      <div class="flex items-start justify-between mb-4 relative z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner">
+            👤
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-2xl font-black tracking-tight" id="vip-user-tier-text">VIP 0</span>
+              <span class="bg-amber-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xs" id="vip-user-badge">
+                <span>💡</span> Level 0
+              </span>
+            </div>
+            <span class="text-xs text-white/80 font-medium" id="vip-tier-subtitle">Your Current Membership Tier</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- System Mode Pill -->
+      <div class="bg-black/20 backdrop-blur-sm rounded-xl px-3.5 py-2 flex items-center justify-between text-xs font-bold text-white/90 mb-4 border border-white/10">
+        <span class="flex items-center gap-1.5">
+          <span>⚙</span>
+          <span id="vip-system-mode-label">System Mode:</span>
+        </span>
+        <span class="text-cyan-200" id="vip-system-mode-value">Deposit & Referral VIP</span>
+      </div>
+
+      <!-- 3 Metrics Cards inside VIP banner (Matching Screenshot 1) -->
+      <div class="grid grid-cols-3 gap-2">
+        <div class="bg-white rounded-2xl p-2.5 text-center shadow-sm">
+          <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 mx-auto mb-1 flex items-center justify-center text-xs">
+            👛
+          </div>
+          <span class="text-[10px] text-slate-400 font-bold block" id="vip-total-deposit-label">Total Deposit</span>
+          <span class="text-xs font-black text-slate-800" id="vip-total-deposit-val">৳0.00</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-2.5 text-center shadow-sm">
+          <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 mx-auto mb-1 flex items-center justify-center text-xs">
+            💵
+          </div>
+          <span class="text-[10px] text-slate-400 font-bold block" id="vip-total-invest-label">Total Invest</span>
+          <span class="text-xs font-black text-slate-800" id="vip-total-invest-val">৳0.00</span>
+        </div>
+
+        <div class="bg-white rounded-2xl p-2.5 text-center shadow-sm">
+          <div class="w-7 h-7 rounded-lg bg-pink-50 text-pink-600 mx-auto mb-1 flex items-center justify-center text-xs">
+            👥
+          </div>
+          <span class="text-[10px] text-slate-400 font-bold block" id="vip-active-refs-label">Active Referrals</span>
+          <span class="text-xs font-black text-pink-600" id="vip-active-refs-val">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIP Membership Levels & Rewards List (Matching Screenshot 1) -->
+    <div>
+      <h3 class="font-extrabold text-sm text-slate-800 mb-2.5 px-0.5" id="vip-levels-title">VIP Membership Levels & Rewards</h3>
+      <div id="vip-levels-list" class="space-y-2.5">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== TAB 4: TEAM & REFERRAL ======================== -->
+  <section id="tab-team" class="tab-pane px-4 pt-3 space-y-4 hidden">
+    <!-- Top Back Title -->
+    <div class="flex items-center gap-2 mb-1">
+      <button onclick="switchTab('home')" class="w-8 h-8 rounded-full bg-white text-slate-600 flex items-center justify-center card-shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="font-black text-base text-slate-800" id="team-page-title">My Team & Network</h2>
+    </div>
+
+    <!-- Team Hero Card (Matching Screenshot 5) -->
+    <div class="gradient-card-team rounded-3xl p-5 text-white shadow-lg relative overflow-hidden">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-2xl shadow-inner">
+            👥
+          </div>
+          <div>
+            <div class="text-2xl font-black tracking-tight" id="team-total-income-val">৳0.00</div>
+            <div class="text-xs text-white/80 font-medium" id="team-income-label">Total Team Commission Income</div>
+          </div>
+        </div>
+        <span class="bg-emerald-500/90 text-white text-[10px] font-black px-2 py-1 rounded-full flex items-center gap-1 shadow-xs" id="team-valid-pill">
+          <span>✓</span> <span id="team-valid-count">0</span> Valid
+        </span>
+      </div>
+
+      <!-- Cumulative Team Recharge -->
+      <div class="bg-black/20 backdrop-blur-sm rounded-xl px-3.5 py-2 flex items-center justify-between text-xs font-bold text-white/90 border border-white/10">
+        <span class="flex items-center gap-1.5">
+          <span>🔄</span>
+          <span id="team-cumulative-label">Cumulative Team Recharge:</span>
+        </span>
+        <span class="text-amber-300 font-extrabold" id="team-cumulative-val">৳0.00</span>
+      </div>
+    </div>
+
+    <!-- 4 Sub-metrics Cards (Matching Screenshot 5) -->
+    <div class="grid grid-cols-4 gap-2">
+      <div class="bg-white rounded-2xl p-2.5 text-center card-shadow border border-slate-100">
+        <div class="w-7 h-7 rounded-lg bg-purple-50 text-purple-600 mx-auto mb-1 flex items-center justify-center text-xs">
+          👥
+        </div>
+        <span class="text-xs font-black text-slate-800 block" id="team-stat-total-members">0</span>
+        <span class="text-[9px] text-slate-400 font-bold" id="team-stat-total-label">Total Team</span>
+      </div>
+
+      <div class="bg-white rounded-2xl p-2.5 text-center card-shadow border border-slate-100">
+        <div class="w-7 h-7 rounded-lg bg-cyan-50 text-cyan-600 mx-auto mb-1 flex items-center justify-center text-xs">
+          📈
+        </div>
+        <span class="text-xs font-black text-slate-800 block" id="team-stat-total-invest">৳0.00</span>
+        <span class="text-[9px] text-slate-400 font-bold" id="team-stat-invest-label">Total Invest</span>
+      </div>
+
+      <div class="bg-white rounded-2xl p-2.5 text-center card-shadow border border-slate-100">
+        <div class="w-7 h-7 rounded-lg bg-pink-50 text-pink-600 mx-auto mb-1 flex items-center justify-center text-xs">
+          💸
+        </div>
+        <span class="text-xs font-black text-slate-800 block" id="team-stat-total-withdraw">৳0.00</span>
+        <span class="text-[9px] text-slate-400 font-bold" id="team-stat-withdraw-label">Withdraw</span>
+      </div>
+
+      <div class="bg-white rounded-2xl p-2.5 text-center card-shadow border border-slate-100">
+        <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 mx-auto mb-1 flex items-center justify-center text-xs">
+          🎖
+        </div>
+        <span class="text-xs font-black text-emerald-600 block" id="team-stat-total-commission">৳0.00</span>
+        <span class="text-[9px] text-slate-400 font-bold" id="team-stat-commission-label">Commission</span>
+      </div>
+    </div>
+
+    <!-- Team Commission Tiers (Matching Screenshot 5) -->
+    <div>
+      <h3 class="font-extrabold text-sm text-slate-800 mb-2.5 px-0.5" id="team-tiers-title">Team Commission Tiers</h3>
+      <div class="space-y-2.5">
+        <!-- Level A -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white font-black text-base flex items-center justify-center shadow-sm">
+              A
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-black text-xs text-slate-800" id="tier-a-name">Level A Direct Team</span>
+                <span class="bg-indigo-50 text-indigo-700 text-[10px] font-black px-2 py-0.5 rounded-full">10.00%</span>
+              </div>
+              <span class="text-[11px] text-slate-400 font-medium" id="tier-a-members-text">0 Active Members</span>
+            </div>
+          </div>
+          <button onclick="viewTierDetails('A')" class="text-slate-300 hover:text-purple-600 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Level B -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-600 text-white font-black text-base flex items-center justify-center shadow-sm">
+              B
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-black text-xs text-slate-800" id="tier-b-name">Level B Indirect Team</span>
+                <span class="bg-cyan-50 text-cyan-700 text-[10px] font-black px-2 py-0.5 rounded-full">5.00%</span>
+              </div>
+              <span class="text-[11px] text-slate-400 font-medium" id="tier-b-members-text">0 Active Members</span>
+            </div>
+          </div>
+          <button onclick="viewTierDetails('B')" class="text-slate-300 hover:text-purple-600 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+
+        <!-- Level C -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-black text-base flex items-center justify-center shadow-sm">
+              C
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-black text-xs text-slate-800" id="tier-c-name">Level C Sub-Team</span>
+                <span class="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-full">2.00%</span>
+              </div>
+              <span class="text-[11px] text-slate-400 font-medium" id="tier-c-members-text">0 Active Members</span>
+            </div>
+          </div>
+          <button onclick="viewTierDetails('C')" class="text-slate-300 hover:text-purple-600 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- View Daily Commission Details Button (Matching Screenshot 5) -->
+    <button onclick="openDailyCommissionModal()" class="w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      <span id="btn-daily-comm-details">View Daily Commission Details</span>
+    </button>
+
+    <!-- My Referral Link Box -->
+    <div class="bg-white rounded-2xl p-4 card-shadow border border-slate-100">
+      <div class="text-xs font-black text-slate-700 mb-2 flex items-center justify-between">
+        <span id="ref-box-title">My Invitation Code & Link</span>
+        <span class="text-purple-600 font-mono text-sm" id="display-ref-code">EE123456</span>
+      </div>
+      <div class="flex gap-2">
+        <input type="text" id="shareable-ref-link" readonly class="flex-1 bg-slate-50 border border-slate-200 px-3 py-2 rounded-xl text-xs text-slate-600 select-all outline-none font-mono">
+        <button onclick="copyReferralLink()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow-xs" id="btn-copy-ref">
+          Copy
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================== TAB 5: ME (PROFILE & WALLETS) ======================== -->
+  <section id="tab-me" class="tab-pane px-4 pt-3 space-y-4 hidden">
+    <!-- Top Back Title -->
+    <div class="flex items-center gap-2 mb-1">
+      <button onclick="switchTab('home')" class="w-8 h-8 rounded-full bg-white text-slate-600 flex items-center justify-center card-shadow">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <h2 class="font-black text-base text-slate-800" id="me-page-title">User Profile & Wallets</h2>
+    </div>
+
+    <!-- User Header Card -->
+    <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100">
+      <div class="flex items-center gap-3.5 mb-4">
+        <div class="w-14 h-14 rounded-2xl gradient-header flex items-center justify-center text-white text-2xl font-bold shadow-md">
+          👤
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-black text-base text-slate-800 truncate" id="me-user-phone">01811754943</span>
+            <span id="me-vip-pill" class="bg-amber-100 text-amber-700 text-[10px] font-black px-2 py-0.5 rounded-full">VIP 0</span>
+          </div>
+          <div class="text-xs text-slate-400 font-medium mt-0.5" id="me-user-id">ID: EE000000</div>
+        </div>
+        <button onclick="handleLogout()" class="bg-rose-50 text-rose-600 hover:bg-rose-100 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors" id="btn-logout">
+          Logout
+        </button>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <button onclick="openRechargeModal()" class="gradient-btn text-white py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-1.5 shadow-sm">
+          <span>⚡</span> <span id="me-btn-recharge">Recharge</span>
+        </button>
+        <button onclick="openWithdrawModal()" class="bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-2xl font-black text-xs flex items-center justify-center gap-1.5 shadow-sm">
+          <span>💸</span> <span id="me-btn-withdraw">Withdraw</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Wallets Grid (6 Wallets) -->
+    <div>
+      <h3 class="font-extrabold text-sm text-slate-800 mb-2.5 px-0.5" id="wallets-overview-title">Wallets Overview</h3>
+      <div class="grid grid-cols-2 gap-2.5">
+        <!-- 1. Recharge Wallet -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block" id="wallet-recharge-label">Recharge Wallet</span>
+          <span class="text-lg font-black text-indigo-600 mt-1 block" id="val-recharge-wallet">৳0.00</span>
+          <span class="text-[9px] text-slate-400 font-medium">Used to purchase plans</span>
+        </div>
+
+        <!-- 2. Balance Wallet -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block" id="wallet-balance-label">Balance Wallet</span>
+          <span class="text-lg font-black text-emerald-600 mt-1 block" id="val-balance-wallet">৳0.00</span>
+          <span class="text-[9px] text-slate-400 font-medium">Withdrawable funds</span>
+        </div>
+
+        <!-- 3. Active Investment -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block" id="wallet-invest-label">Active Investment</span>
+          <span class="text-lg font-black text-purple-600 mt-1 block" id="val-active-invest">৳0.00</span>
+          <span class="text-[9px] text-slate-400 font-medium">Currently active cycles</span>
+        </div>
+
+        <!-- 4. Profit Earned -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block" id="wallet-profit-label">Profit Earned</span>
+          <span class="text-lg font-black text-amber-500 mt-1 block" id="val-profit-earned">৳0.00</span>
+          <span class="text-[9px] text-slate-400 font-medium">Lifetime package profit</span>
+        </div>
+
+        <!-- 5. Income Today -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block" id="wallet-today-label">Income Today</span>
+          <span class="text-lg font-black text-blue-600 mt-1 block" id="val-income-today">৳0.00</span>
+          <span class="text-[9px] text-slate-400 font-medium">Yield credited today</span>
+        </div>
+
+        <!-- 6. Team Income -->
+        <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100">
+          <span class="text-[10px] font-bold text-slate-400 block" id="wallet-team-income-label">Team Income</span>
+          <span class="text-lg font-black text-pink-600 mt-1 block" id="val-team-income">৳0.00</span>
+          <span class="text-[9px] text-slate-400 font-medium">Verified referral reward</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction History Card & Modal Trigger -->
+    <div class="bg-white rounded-2xl p-4 card-shadow border border-slate-100">
+      <div class="flex items-center justify-between mb-3">
+        <h4 class="font-extrabold text-xs text-slate-800" id="tx-history-title">Recent Transactions</h4>
+        <button onclick="openTxHistoryModal()" class="text-xs font-bold text-purple-600 hover:text-purple-700" id="tx-view-all">View All →</button>
+      </div>
+      <div id="me-recent-transactions-list" class="space-y-2">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- Admin Panel Link (Shown for admins or demo toggle) -->
+    <div id="admin-panel-portal-link" class="pt-1">
+      <a href="admin.html" class="flex items-center justify-between bg-gradient-to-r from-slate-900 to-purple-950 text-white rounded-2xl p-4 card-shadow border border-purple-800/40 hover:opacity-95 transition-opacity">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-300 flex items-center justify-center text-xl">
+            🔐
+          </div>
+          <div>
+            <div class="font-black text-sm" id="admin-portal-title">Administrator Console</div>
+            <div class="text-[10px] text-purple-200/80" id="admin-portal-sub">Verify deposits, withdrawals & manage users</div>
+          </div>
+        </div>
+        <span class="text-purple-300 font-black text-sm">→</span>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<!-- ======================== FIXED 5-TAB BOTTOM NAVIGATION ======================== -->
+<nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200/80 z-40 px-2 py-1.5 flex justify-around shadow-2xl hidden">
+  <!-- 1. Home -->
+  <button onclick="switchTab('home')" class="nav-item flex flex-col items-center py-1 px-3 text-purple-600 font-black transition-colors" data-tab="home">
+    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    <span class="text-[10px]" id="nav-lbl-home">Home</span>
+  </button>
+
+  <!-- 2. Product -->
+  <button onclick="switchTab('product')" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 font-semibold transition-colors hover:text-purple-600" data-tab="product">
+    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+    <span class="text-[10px]" id="nav-lbl-product">Product</span>
+  </button>
+
+  <!-- 3. VIP -->
+  <button onclick="switchTab('vip')" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 font-semibold transition-colors hover:text-purple-600" data-tab="vip">
+    <div class="relative">
+      <svg class="w-5 h-5 mb-0.5 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    </div>
+    <span class="text-[10px]" id="nav-lbl-vip">VIP</span>
+  </button>
+
+  <!-- 4. Team -->
+  <button onclick="switchTab('team')" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 font-semibold transition-colors hover:text-purple-600" data-tab="team">
+    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+    <span class="text-[10px]" id="nav-lbl-team">Team</span>
+  </button>
+
+  <!-- 5. Me -->
+  <button onclick="switchTab('me')" class="nav-item flex flex-col items-center py-1 px-3 text-slate-400 font-semibold transition-colors hover:text-purple-600" data-tab="me">
+    <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+    <span class="text-[10px]" id="nav-lbl-me">Me</span>
+  </button>
+</nav>
+
+<!-- ======================== MODALS CONTAINER ======================== -->
+
+<!-- MODAL: RECHARGE / DEPOSIT -->
+<div id="modal-recharge" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[92vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">⚡</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-recharge-title">Recharge Wallet</h3>
+      </div>
+      <button onclick="closeRechargeModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <!-- Official Agent Payment Numbers Banner -->
+    <div class="bg-purple-50 rounded-2xl p-3.5 mb-4 border border-purple-100 text-xs">
+      <div class="font-bold text-purple-900 mb-1 flex items-center justify-between">
+        <span id="m-recharge-agent-title">Official Deposit Numbers (Personal / Agent)</span>
+        <span class="text-[10px] bg-purple-200 text-purple-800 px-2 py-0.5 rounded-full font-extrabold">Send Money</span>
+      </div>
+      <div class="space-y-1 font-mono text-purple-800 font-bold" id="agent-numbers-list">
+        <div>• bKash: 01811754943</div>
+        <div>• Nagad: 01811754943</div>
+        <div>• Rocket: 01811754943</div>
+      </div>
+      <p class="text-[10px] text-purple-600 mt-2 font-normal" id="m-recharge-instruction">
+        Send money from your wallet, then submit the exact amount and Transaction ID below. Requests are verified by admin.
+      </p>
+    </div>
+
+    <div class="space-y-3.5">
+      <!-- Amount -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="m-recharge-amount-label">Deposit Amount (৳)</label>
+        <div class="relative">
+          <input type="number" id="recharge-input-amount" min="10" placeholder="Minimum ৳10 / $0.08" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-purple-500 text-base font-bold outline-none">
+          <div class="flex gap-1.5 mt-2">
+            <button type="button" onclick="setQuickRecharge(10)" class="px-3 py-1 bg-slate-100 hover:bg-purple-100 hover:text-purple-700 text-xs font-bold rounded-lg transition-colors">৳10</button>
+            <button type="button" onclick="setQuickRecharge(50)" class="px-3 py-1 bg-slate-100 hover:bg-purple-100 hover:text-purple-700 text-xs font-bold rounded-lg transition-colors">৳50</button>
+            <button type="button" onclick="setQuickRecharge(100)" class="px-3 py-1 bg-slate-100 hover:bg-purple-100 hover:text-purple-700 text-xs font-bold rounded-lg transition-colors">৳100</button>
+            <button type="button" onclick="setQuickRecharge(500)" class="px-3 py-1 bg-slate-100 hover:bg-purple-100 hover:text-purple-700 text-xs font-bold rounded-lg transition-colors">৳500</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment Method -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" id="m-recharge-method-label">Payment Method</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="selectRechargeMethod('bKash')" class="recharge-method-btn py-2.5 rounded-xl border-2 border-purple-500 bg-purple-50 text-purple-700 font-bold text-xs" data-method="bKash">bKash</button>
+          <button type="button" onclick="selectRechargeMethod('Nagad')" class="recharge-method-btn py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs" data-method="Nagad">Nagad</button>
+          <button type="button" onclick="selectRechargeMethod('Rocket')" class="recharge-method-btn py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs" data-method="Rocket">Rocket</button>
+        </div>
+      </div>
+
+      <!-- Sender Phone Number -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="m-recharge-sender-label">Sender Mobile Number</label>
+        <input type="tel" id="recharge-input-sender" placeholder="01XXXXXXXXX" class="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:border-purple-500 text-sm outline-none font-medium">
+      </div>
+
+      <!-- Transaction ID -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="m-recharge-trx-label">Transaction ID (TrxID)</label>
+        <input type="text" id="recharge-input-trx" placeholder="e.g. BL9A8BC1X" class="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:border-purple-500 text-sm outline-none font-mono uppercase">
+      </div>
+
+      <!-- Payment Slip / Receipt Screenshot Upload -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="m-recharge-proof-label">Payment Slip Screenshot (Optional)</label>
+        <div class="flex items-center gap-2">
+          <input type="file" id="recharge-proof-file" accept="image/*" class="hidden" onchange="handleProofImageSelected(event)">
+          <button type="button" onclick="document.getElementById('recharge-proof-file').click()" class="flex-1 py-2.5 px-3 border border-dashed border-purple-400 bg-purple-50/50 hover:bg-purple-50 rounded-2xl text-purple-700 text-xs font-bold flex items-center justify-center gap-2 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+            <span id="recharge-proof-btn-text">Attach Receipt / Slip</span>
+          </button>
+          <div id="recharge-proof-preview" class="w-11 h-11 rounded-2xl bg-slate-100 border border-slate-200 hidden overflow-hidden shrink-0 relative">
+            <img id="recharge-proof-img" src="" class="w-full h-full object-cover">
+            <button type="button" onclick="removeProofImage(event)" class="absolute top-0.5 right-0.5 w-4 h-4 bg-black/60 text-white rounded-full text-[9px] flex items-center justify-center font-black">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit Request Button -->
+      <button onclick="submitRechargeRequest()" id="btn-submit-recharge" class="w-full gradient-btn text-white py-3.5 rounded-2xl font-black text-sm shadow-md mt-2">
+        <span id="m-recharge-submit-btn">Submit Recharge Request</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: WITHDRAW -->
+<div id="modal-withdraw" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[92vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">💸</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-withdraw-title">Withdraw Funds</h3>
+      </div>
+      <button onclick="closeWithdrawModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <!-- Available Withdrawable Balance Card -->
+    <div class="bg-emerald-50 rounded-2xl p-3.5 mb-4 border border-emerald-100 flex items-center justify-between">
+      <div>
+        <span class="text-[11px] text-emerald-800 font-bold block" id="m-withdraw-avail-label">Withdrawable Balance Wallet</span>
+        <span class="text-xl font-black text-emerald-700" id="m-withdraw-avail-val">৳0.00</span>
+      </div>
+      <span class="text-[10px] bg-emerald-200 text-emerald-900 font-black px-2 py-1 rounded-full">Min: ৳100</span>
+    </div>
+
+    <div class="space-y-3.5">
+      <!-- Amount -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="m-withdraw-amount-label">Withdraw Amount (৳)</label>
+        <input type="number" id="withdraw-input-amount" min="100" placeholder="Minimum ৳100 / $0.83" class="w-full px-4 py-3 rounded-2xl border border-slate-200 focus:border-purple-500 text-base font-bold outline-none">
+      </div>
+
+      <!-- Payment Method -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" id="m-withdraw-method-label">Payment Method</label>
+        <div class="grid grid-cols-3 gap-2">
+          <button type="button" onclick="selectWithdrawMethod('bKash')" class="withdraw-method-btn py-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-bold text-xs" data-method="bKash">bKash</button>
+          <button type="button" onclick="selectWithdrawMethod('Nagad')" class="withdraw-method-btn py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs" data-method="Nagad">Nagad</button>
+          <button type="button" onclick="selectWithdrawMethod('Rocket')" class="withdraw-method-btn py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs" data-method="Rocket">Rocket</button>
+        </div>
+      </div>
+
+      <!-- Account Number -->
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1" id="m-withdraw-account-label">Recipient Account / Mobile Number</label>
+        <input type="tel" id="withdraw-input-account" placeholder="01XXXXXXXXX" class="w-full px-4 py-2.5 rounded-2xl border border-slate-200 focus:border-purple-500 text-sm outline-none font-medium">
+      </div>
+
+      <p class="text-[10px] text-slate-400 font-normal" id="m-withdraw-note">
+        Funds are deducted immediately from your Balance Wallet and verified by admin prior to disbursement. Rejected requests are refunded automatically.
+      </p>
+
+      <!-- Submit Request Button -->
+      <button onclick="submitWithdrawRequest()" id="btn-submit-withdraw" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3.5 rounded-2xl font-black text-sm shadow-md mt-2">
+        <span id="m-withdraw-submit-btn">Submit Withdrawal Request</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MARKETING PLAN & PACKAGE PURCHASE -->
+<div id="modal-package-details" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[92vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">⚡</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-pkg-title">Marketing Plan</h3>
+      </div>
+      <button onclick="closePackageModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <div id="modal-package-content" class="space-y-4">
+      <!-- Dynamic Package Content -->
+    </div>
+
+    <!-- Confirm Purchase Button -->
+    <div class="pt-2">
+      <button onclick="executePackagePurchase()" id="btn-confirm-purchase" class="w-full gradient-btn text-white py-3.5 rounded-2xl font-black text-sm shadow-md flex items-center justify-center gap-2">
+        <span id="m-pkg-confirm-text">Confirm Investment Purchase</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DAILY COMMISSION DETAILS -->
+<div id="modal-daily-comm" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[90vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📊</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-comm-title">Daily Commission Details</h3>
+      </div>
+      <button onclick="closeDailyCommissionModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <div class="bg-purple-50 rounded-2xl p-3 mb-4 text-xs font-bold text-purple-900 flex justify-between items-center">
+      <span>Multi-Tier Earnings Overview</span>
+      <span class="text-purple-600 font-extrabold" id="modal-comm-total-sum">৳0.00</span>
+    </div>
+
+    <div id="modal-daily-comm-list" class="space-y-2 max-h-80 overflow-y-auto pr-1">
+      <!-- Dynamic list -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: TRANSACTION HISTORY -->
+<div id="modal-tx-history" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[90vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🧾</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-tx-title">Transaction History</h3>
+      </div>
+      <button onclick="closeTxHistoryModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="flex gap-2 mb-3 overflow-x-auto no-scrollbar">
+      <button onclick="filterTxLog('all')" class="tx-filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-purple-600 text-white" data-type="all">All</button>
+      <button onclick="filterTxLog('deposit')" class="tx-filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600" data-type="deposit">Deposits</button>
+      <button onclick="filterTxLog('withdrawal')" class="tx-filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600" data-type="withdrawal">Withdrawals</button>
+      <button onclick="filterTxLog('investment')" class="tx-filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600" data-type="investment">Investments</button>
+    </div>
+
+    <div id="modal-all-tx-list" class="space-y-2.5 max-h-96 overflow-y-auto pr-1">
+      <!-- Dynamic list -->
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SPIN & WIN WHEEL -->
+<div id="modal-spin" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4">
+  <div class="modal-overlay absolute inset-0" onclick="closeSpinModal()"></div>
+  <div class="relative bg-white rounded-3xl p-6 max-w-xs w-full text-center shadow-2xl z-10 fade-in border border-purple-100">
+    <button onclick="closeSpinModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center">✕</button>
+    <div class="text-3xl mb-1">🎡</div>
+    <h3 class="font-black text-lg text-slate-800" id="spin-modal-title">Spin & Win Rewards</h3>
+    <p class="text-xs text-slate-500 mb-4" id="spin-modal-sub">Daily lucky wheel for active members</p>
+
+    <!-- Wheel Visual -->
+    <div class="relative w-48 h-48 mx-auto my-3 flex items-center justify-center">
+      <div id="wheel-disc" class="w-48 h-48 rounded-full border-4 border-amber-400 bg-gradient-to-tr from-purple-700 via-pink-600 to-amber-500 shadow-xl flex items-center justify-center transition-all duration-3000">
+        <div class="w-16 h-16 rounded-full bg-slate-900 border-2 border-white flex items-center justify-center text-white text-xs font-black">
+          EASY EARN
+        </div>
+      </div>
+      <!-- Pointer -->
+      <div class="absolute -top-1 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[16px] border-t-amber-400 z-10"></div>
+    </div>
+
+    <button onclick="spinTheWheel()" id="btn-spin-wheel" class="w-full gradient-btn text-white py-3 rounded-2xl font-black text-sm shadow-md mt-2">
+      Spin Now!
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: FORGOT PASSWORD / ACCOUNT RECOVERY -->
+<div id="modal-forgot-pass" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4">
+  <div class="modal-overlay absolute inset-0" onclick="closeForgotPasswordModal()"></div>
+  <div class="relative bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl z-10 fade-in border border-slate-100">
+    <button onclick="closeForgotPasswordModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center">✕</button>
+    <div class="text-3xl text-center mb-1">🔑</div>
+    <h3 class="font-black text-base text-slate-800 text-center" id="m-forgot-title">Account Recovery</h3>
+    <p class="text-xs text-slate-500 text-center mb-4" id="m-forgot-sub">Reset your account security credential</p>
+
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Registered Phone</label>
+        <input type="tel" id="forgot-input-phone" placeholder="01XXXXXXXXX" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">New Password</label>
+        <input type="password" id="forgot-input-newpass" placeholder="Min 6 characters" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none">
+      </div>
+      <button onclick="submitPasswordRecovery()" class="w-full gradient-btn text-white py-2.5 rounded-xl font-black text-xs shadow-md mt-2">
+        Reset Password
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: NOTICE DETAILS -->
+<div id="modal-notice" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4">
+  <div class="modal-overlay absolute inset-0" onclick="closeNoticeModal()"></div>
+  <div class="relative bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl z-10 fade-in border border-slate-100">
+    <button onclick="closeNoticeModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center">✕</button>
+    <div class="text-3xl text-center mb-1">📢</div>
+    <h3 class="font-black text-base text-slate-800 text-center" id="m-notice-title">System Announcements</h3>
+    <div class="text-xs text-slate-600 mt-3 space-y-2 leading-relaxed">
+      <div class="p-2.5 bg-purple-50 rounded-xl border border-purple-100">
+        <div class="font-black text-purple-900 mb-0.5">Welcome Bonus ৳20</div>
+        <div>All newly registered accounts receive an automatic ৳20 bonus in Balance Wallet.</div>
+      </div>
+      <div class="p-2.5 bg-blue-50 rounded-xl border border-blue-100">
+        <div class="font-black text-blue-900 mb-0.5">Fast Deposit & Withdrawal</div>
+        <div>Deposits and withdrawals are processed promptly via bKash, Nagad, and Rocket.</div>
+      </div>
+      <div class="p-2.5 bg-amber-50 rounded-xl border border-amber-100">
+        <div class="font-black text-amber-900 mb-0.5">VIP Tier Rewards</div>
+        <div>Upgrade your VIP tier by investing or referring active team members.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MY PRODUCTS (ACTIVE PACKAGES & DAILY INCOME) -->
+<div id="modal-my-products" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[92vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">📦</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-myproducts-title">My Purchased Products</h3>
+      </div>
+      <button onclick="closeMyProductsModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <!-- Active Capital Summary Card -->
+    <div class="bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-2xl p-4 mb-4 shadow-md flex items-center justify-between">
+      <div>
+        <span class="text-[11px] text-teal-100 font-bold block" id="m-myprod-invest-label">Active Invested Capital</span>
+        <span class="text-xl font-black" id="m-myprod-invest-val">৳0.00</span>
+      </div>
+      <div class="text-right">
+        <span class="text-[11px] text-teal-100 font-bold block" id="m-myprod-daily-label">Daily Yield Rate</span>
+        <span class="text-xl font-black text-amber-300" id="m-myprod-daily-val">+৳0.00</span>
+      </div>
+    </div>
+
+    <!-- Products List -->
+    <div id="my-products-list-container" class="space-y-3 mb-4">
+      <!-- Rendered by JS -->
+    </div>
+
+    <div class="pt-2">
+      <button onclick="closeMyProductsModal(); switchTab('product');" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-3 rounded-2xl font-bold text-xs transition-colors flex items-center justify-center gap-1.5">
+        <span>+ Explore More Packages</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DOWNLOAD APP (ANDROID APK) -->
+<div id="modal-download-app" class="fixed inset-0 z-50 hidden flex items-center justify-center px-4">
+  <div class="modal-overlay absolute inset-0" onclick="closeDownloadAppModal()"></div>
+  <div class="relative bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl z-10 fade-in border border-slate-100 text-center">
+    <button onclick="closeDownloadAppModal()" class="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold flex items-center justify-center">✕</button>
+    
+    <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 text-white flex items-center justify-center text-3xl mx-auto mb-3 shadow-lg">
+      📲
+    </div>
+    <h3 class="font-black text-base text-slate-800" id="m-download-title">Easy Earn Mobile App</h3>
+    <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full inline-block mt-1">Official Android APK • v2.4.1</span>
+
+    <div class="bg-slate-50 rounded-2xl p-3 my-4 border border-slate-100 text-left text-xs space-y-1.5">
+      <div class="flex justify-between text-slate-500 font-medium">
+        <span>Package Size:</span>
+        <b class="text-slate-800">8.4 MB</b>
+      </div>
+      <div class="flex justify-between text-slate-500 font-medium">
+        <span>Requires:</span>
+        <b class="text-slate-800">Android 6.0+</b>
+      </div>
+      <div class="flex justify-between text-slate-500 font-medium">
+        <span>Security Check:</span>
+        <b class="text-emerald-600">✓ Google Play Protect Safe</b>
+      </div>
+    </div>
+
+    <!-- Download Progress Bar (Simulated) -->
+    <div id="download-progress-box" class="hidden mb-3">
+      <div class="flex justify-between text-[11px] text-slate-600 font-bold mb-1">
+        <span id="dl-progress-text">Downloading APK...</span>
+        <span id="dl-progress-percent">0%</span>
+      </div>
+      <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+        <div id="dl-progress-bar" class="h-full bg-gradient-to-r from-blue-600 to-cyan-500 transition-all duration-300 w-0"></div>
+      </div>
+    </div>
+
+    <button onclick="startAppDownload()" id="btn-start-download" class="w-full gradient-btn text-white py-3 rounded-2xl font-black text-xs shadow-md">
+      Download APK (8.4 MB)
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: ONLINE SUPPORT (LIVE TELEGRAM & FAQ) -->
+<div id="modal-online-support" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[90vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">🎧</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-support-title">Online Customer Support</h3>
+      </div>
+      <button onclick="closeSupportModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <!-- Live Agent Help Cards -->
+    <div class="space-y-2.5 mb-5">
+      <a href="https://t.me/EasyEarnOfficial_BD" target="_blank" class="flex items-center justify-between p-3.5 bg-blue-50 hover:bg-blue-100 rounded-2xl border border-blue-100 transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-blue-500 text-white flex items-center justify-center text-xl shadow-xs">
+            ✈️
+          </div>
+          <div>
+            <div class="font-black text-xs text-blue-950">Official Telegram Channel</div>
+            <div class="text-[10px] text-blue-600 font-medium">@EasyEarnOfficial_BD • 24/7 Live Support</div>
+          </div>
+        </div>
+        <span class="text-blue-500 text-xs font-black">Chat →</span>
+      </a>
+
+      <a href="https://wa.me/8801811754943" target="_blank" class="flex items-center justify-between p-3.5 bg-emerald-50 hover:bg-emerald-100 rounded-2xl border border-emerald-100 transition-colors">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xl shadow-xs">
+            💬
+          </div>
+          <div>
+            <div class="font-black text-xs text-emerald-950">WhatsApp Official Desk</div>
+            <div class="text-[10px] text-emerald-600 font-medium">+880 1811-754943 • Instant Responses</div>
+          </div>
+        </div>
+        <span class="text-emerald-500 text-xs font-black">Message →</span>
+      </a>
+    </div>
+
+    <!-- FAQ Accordion -->
+    <div class="space-y-2">
+      <h4 class="font-extrabold text-xs text-slate-700 mb-2">Frequently Asked Questions (FAQ)</h4>
+      
+      <details class="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-xs cursor-pointer">
+        <summary class="font-bold text-slate-800 list-none flex justify-between items-center">
+          <span>How does Recharge / Deposit work?</span>
+          <span class="text-purple-600 text-sm font-black">+</span>
+        </summary>
+        <p class="text-slate-600 mt-2 text-[11px] leading-relaxed">
+          Send money from your bKash, Nagad, or Rocket account to the official company numbers shown in the Recharge modal. Enter your Transaction ID and attach a slip. The admin approves it and your Recharge Wallet is credited immediately.
+        </p>
+      </details>
+
+      <details class="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-xs cursor-pointer">
+        <summary class="font-bold text-slate-800 list-none flex justify-between items-center">
+          <span>What is the minimum withdrawal amount?</span>
+          <span class="text-purple-600 text-sm font-black">+</span>
+        </summary>
+        <p class="text-slate-600 mt-2 text-[11px] leading-relaxed">
+          The minimum withdrawal amount is ৳100 (or $0.83). Funds are paid out directly to your bKash, Nagad, or Rocket number upon admin approval.
+        </p>
+      </details>
+
+      <details class="bg-slate-50 rounded-2xl p-3 border border-slate-100 text-xs cursor-pointer">
+        <summary class="font-bold text-slate-800 list-none flex justify-between items-center">
+          <span>How do multi-tier team commissions work?</span>
+          <span class="text-purple-600 text-sm font-black">+</span>
+        </summary>
+        <p class="text-slate-600 mt-2 text-[11px] leading-relaxed">
+          When people sign up using your referral link, you receive 10% on direct team (Level A) package investments, 5% on indirect team (Level B), and 2% on sub-team (Level C). All commissions are credited instantly to your Balance Wallet!
+        </p>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: AGENT SALARY -->
+<div id="modal-agent-salary" class="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-3xl max-w-md mx-auto hidden slide-up shadow-2xl border-t border-slate-100 max-h-[92vh] overflow-y-auto">
+  <div class="p-5">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xl">💼</span>
+        <h3 class="font-extrabold text-base text-slate-800" id="m-salary-title">Agent Monthly Salary</h3>
+      </div>
+      <button onclick="closeAgentSalaryModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center font-bold">✕</button>
+    </div>
+
+    <!-- Agent Rank Banner -->
+    <div class="bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 text-slate-950 rounded-2xl p-4 mb-4 shadow-md">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[10px] uppercase font-black tracking-wider bg-black/20 text-white px-2 py-0.5 rounded">CAREER PROGRAM</span>
+        <span class="font-bold text-xs" id="m-salary-active-count">0 / 30 Active Team Members</span>
+      </div>
+      <h4 class="text-lg font-black leading-tight">Become an Official Easy Earn Agent</h4>
+      <p class="text-xs text-slate-900/80 font-medium mt-1">Receive a fixed monthly salary directly into your wallet on the 1st of every month.</p>
+    </div>
+
+    <!-- Salary Milestone Ladder -->
+    <div class="space-y-2.5 mb-4 text-xs">
+      <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100 flex items-center justify-between">
+        <div>
+          <div class="font-black text-slate-800">Junior Agent (Tier 1)</div>
+          <div class="text-[11px] text-slate-400">Requirement: 10 Active Direct Referrals</div>
+        </div>
+        <span class="font-black text-emerald-600 text-sm">৳1,000 / mo</span>
+      </div>
+
+      <div class="bg-purple-50/70 p-3 rounded-2xl border border-purple-100 flex items-center justify-between">
+        <div>
+          <div class="font-black text-purple-950">Senior Agent (Tier 2)</div>
+          <div class="text-[11px] text-purple-600">Requirement: 30 Active Direct Referrals</div>
+        </div>
+        <span class="font-black text-purple-700 text-sm">৳5,000 / mo</span>
+      </div>
+
+      <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-100 flex items-center justify-between">
+        <div>
+          <div class="font-black text-amber-950">Master Regional Partner (Tier 3)</div>
+          <div class="text-[11px] text-amber-700">Requirement: 100 Active Direct Referrals</div>
+        </div>
+        <span class="font-black text-amber-600 text-sm">৳20,000 / mo</span>
+      </div>
+    </div>
+
+    <button onclick="claimAgentSalary()" class="w-full gradient-btn text-white py-3.5 rounded-2xl font-black text-xs shadow-md">
+      Check Salary Eligibility & Apply
+    </button>
+  </div>
+</div>
+
+<!-- ======================== APPLICATION LOGIC & FIREBASE SDK INTEGRATION ======================== -->
+<script>
+/**
+ * Easy Earn Web Application Engine
+ * Supports Firebase modular/compat v10 + local storage mock fallback for testing without credentials
+ */
+
+// ==================== FIREBASE CONFIGURATION ====================
+const firebaseConfig = {
+  apiKey: "AIzaSyDx4JwSWauPcAJFXzpuo2G1Yr4E6yN581g",
+  authDomain: "esey-96c15.firebaseapp.com",
+  projectId: "esey-96c15",
+  storageBucket: "esey-96c15.firebasestorage.app",
+  messagingSenderId: "218519904216",
+  appId: "1:218519904216:web:6149dca3f24b61092b9cad",
+  measurementId: "G-1TT8R63F8V"
+};
+
+let db = null;
+let auth = null;
+let storage = null;
+let isFirebaseConnected = false;
+
+try {
+  if (typeof firebase !== 'undefined' && firebase.initializeApp) {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    auth = firebase.auth();
+    storage = firebase.storage();
+    isFirebaseConnected = true;
+    console.log('[Easy Earn] Firebase initialized successfully');
+  }
+} catch(err) {
+  console.warn('[Easy Earn] Firebase init note (Local testing fallback active):', err.message);
+}
+
+// ==================== TRANSLATIONS (EN & BN) ====================
+const I18N = {
+  en: {
+    // Header & Global
+    headerSubtitle: "Easy Earn Network",
+    noticeBadge: "NOTICE",
+    tickerText: "🎉 Welcome to Easy Earn! Activate Hope rices packages, earn daily yields, and build your referral team today! Minimum withdrawal is ৳100 / $0.83.",
+    qsTitle: "Quick Services",
+    qsSubtitle: "Instant Access",
+    qsRecharge: "Recharge",
+    qsWithdraw: "Withdraw",
+    qsMyProduct: "My Product",
+    qsCommission: "Commission",
+    qsDownload: "Download",
+    qsOnline: "Online",
+    qsInvitation: "Invitation",
+    qsSalary: "Agent Salary",
+    officialVideoTitle: "Official Video & Showcase",
+    featuredPkgTitle: "Featured Packages",
+    seeAll: "See All →",
+    // Tabs & Nav
+    navHome: "Home",
+    navProduct: "Product",
+    navVip: "VIP",
+    navTeam: "Team",
+    navMe: "Me",
+    // Product Page
+    productPageTitle: "Investment Products",
+    filterFixed: "Fixed Yields",
+    filterFlexible: "Flexible Rates",
+    filterLimited: "Limited Offers",
+    riskTitle: "Risk Disclosure & Illustrative Assumptions",
+    riskBody: "All return figures shown below are illustrative, unverified assumptions for demonstration. Returns are not guaranteed. Invest responsibly within your financial capacity.",
+    priceLabel: "Price",
+    dailyLabel: "Daily",
+    cycleLabel: "Cycle",
+    totalReturnLabel: "Total Return",
+    marketingPlanBtn: "⚡ Marketing Plan",
+    hotDealBadge: "HOT DEAL",
+    activeBadge: "Active",
+    lockedBadge: "Locked",
+    // VIP Page
+    vipPageTitle: "VIP System & Privilege",
+    vipCurrentTier: "Your Current Membership Tier",
+    vipSystemModeLabel: "System Mode:",
+    vipSystemModeVal: "Deposit & Referral VIP",
+    vipTotalDeposit: "Total Deposit",
+    vipTotalInvest: "Total Invest",
+    vipActiveRefs: "Active Referrals",
+    vipLevelsTitle: "VIP Membership Levels & Rewards",
+    reqLabel: "Req:",
+    orLabel: "OR",
+    refsLabel: "Referrals",
+    // Team Page
+    teamPageTitle: "My Team & Network",
+    teamIncomeLabel: "Total Team Commission Income",
+    teamCumulativeLabel: "Cumulative Team Recharge:",
+    teamTotalMembers: "Total Team",
+    teamTotalInvest: "Total Invest",
+    teamWithdraw: "Withdraw",
+    teamCommission: "Commission",
+    teamTiersTitle: "Team Commission Tiers",
+    levelAName: "Level A Direct Team",
+    levelBName: "Level B Indirect Team",
+    levelCName: "Level C Sub-Team",
+    viewDailyCommBtn: "View Daily Commission Details",
+    refBoxTitle: "My Invitation Code & Link",
+    copyBtn: "Copy",
+    copiedToast: "Referral link copied to clipboard!",
+    // Profile Page
+    mePageTitle: "User Profile & Wallets",
+    logoutBtn: "Logout",
+    meBtnRecharge: "Recharge",
+    meBtnWithdraw: "Withdraw",
+    walletsTitle: "Wallets Overview",
+    walletRecharge: "Recharge Wallet",
+    walletBalance: "Balance Wallet",
+    walletInvest: "Active Investment",
+    walletProfit: "Profit Earned",
+    walletToday: "Income Today",
+    walletTeam: "Team Income",
+    txHistoryTitle: "Recent Transactions",
+    viewAllTx: "View All →",
+    adminPortalTitle: "Administrator Console",
+    adminPortalSub: "Verify deposits, withdrawals & manage users",
+    // Modals
+    rechargeModalTitle: "Recharge Wallet",
+    rechargeAgentTitle: "Official Deposit Numbers (Personal / Agent)",
+    rechargeInstructions: "Send money from your wallet, then submit the exact amount and Transaction ID below. Requests are verified by admin.",
+    rechargeAmountLabel: "Deposit Amount",
+    rechargeMethodLabel: "Payment Method",
+    rechargeSenderLabel: "Sender Mobile Number",
+    rechargeTrxLabel: "Transaction ID (TrxID)",
+    rechargeSubmitBtn: "Submit Recharge Request",
+    withdrawModalTitle: "Withdraw Funds",
+    withdrawAvailLabel: "Withdrawable Balance Wallet",
+    withdrawAmountLabel: "Withdraw Amount",
+    withdrawMethodLabel: "Payment Method",
+    withdrawAccountLabel: "Recipient Account / Mobile Number",
+    withdrawNote: "Funds are deducted immediately from your Balance Wallet and verified by admin prior to disbursement. Rejected requests are refunded automatically.",
+    withdrawSubmitBtn: "Submit Withdrawal Request",
+    // Auth
+    loginNowBtn: "Login Now",
+    createActBtn: "Create Account",
+    forgotPassLink: "Forgot password?",
+    bannerTagline: "Upgrade Your TV • Upgrade Your Life"
+  },
+  bn: {
+    // Header & Global
+    headerSubtitle: "ইজি আর্ন নেটওয়ার্ক",
+    noticeBadge: "নোটিশ",
+    tickerText: "🎉 ইজি আর্ন এ স্বাগতম! হোপ রাইসেস প্যাকেজ চালু করুন, দৈনিক আয় উপার্জন করুন এবং আপনার টিম গড়ে তুলুন! সর্বনিম্ন উত্তোলন ৳১০০ / $০.৮৩।",
+    qsTitle: "দ্রুত সেবা",
+    qsSubtitle: "সহজ অ্যাক্সেস",
+    qsRecharge: "রিচার্জ",
+    qsWithdraw: "উইথড্র",
+    qsMyProduct: "আমার পণ্য",
+    qsCommission: "কমিশন",
+    qsDownload: "ডাউনলোড",
+    qsOnline: "অনলাইন",
+    qsInvitation: "আমন্ত্রণ",
+    qsSalary: "এজেন্ট বেতন",
+    officialVideoTitle: "অফিসিয়াল ভিডিও ও প্রদর্শনী",
+    featuredPkgTitle: "সেরা প্যাকেজসমূহ",
+    seeAll: "সব দেখুন →",
+    // Tabs & Nav
+    navHome: "হোম",
+    navProduct: "পণ্য",
+    navVip: "ভিআইপি",
+    navTeam: "টিম",
+    navMe: "আমি",
+    // Product Page
+    productPageTitle: "বিনিয়োগ পণ্যসমূহ",
+    filterFixed: "নির্দিষ্ট আয়",
+    filterFlexible: "নমনীয় হার",
+    filterLimited: "সীমিত অফার",
+    riskTitle: "ঝুঁকি প্রকাশ ও নমুনা অনুমান",
+    riskBody: "নিচে প্রদর্শিত সকল রিটার্ন শুধুমাত্র আনুমানিক ও নমুনা হিসেবে প্রদর্শিত। মুনাফা গ্যারান্টিযুক্ত নয়। আপনার আর্থিক সামর্থ্য অনুযায়ী দায়িত্ব নিয়ে অংশগ্রহণ করুন।",
+    priceLabel: "মূল্য",
+    dailyLabel: "দৈনিক",
+    cycleLabel: "মেয়াদ",
+    totalReturnLabel: "মোট লাভ",
+    marketingPlanBtn: "⚡ মার্কেটিং প্ল্যান",
+    hotDealBadge: "হট ডিল",
+    activeBadge: "সক্রিয়",
+    lockedBadge: "লকড",
+    // VIP Page
+    vipPageTitle: "ভিআইপি সিস্টেম ও সুবিধা",
+    vipCurrentTier: "আপনার বর্তমান সদস্যপদ স্তর",
+    vipSystemModeLabel: "সিস্টেম মোড:",
+    vipSystemModeVal: "ডিপোজিট ও রেফারাল ভিআইপি",
+    vipTotalDeposit: "মোট জমা",
+    vipTotalInvest: "মোট বিনিয়োগ",
+    vipActiveRefs: "সক্রিয় রেফারাল",
+    vipLevelsTitle: "ভিআইপি স্তর ও পুরস্কারসমূহ",
+    reqLabel: "প্রয়োজন:",
+    orLabel: "অথবা",
+    refsLabel: "রেফারাল",
+    // Team Page
+    teamPageTitle: "আমার টিম ও নেটওয়ার্ক",
+    teamIncomeLabel: "মোট টিম কমিশন আয়",
+    teamCumulativeLabel: "টিম মোট রিচার্জ:",
+    teamTotalMembers: "মোট টিম",
+    teamTotalInvest: "মোট বিনিয়োগ",
+    teamWithdraw: "উত্তোলন",
+    teamCommission: "কমিশন",
+    teamTiersTitle: "টিম কমিশন স্তরসমূহ",
+    levelAName: "লেভেল এ সরাসরি টিম",
+    levelBName: "লেভেল বি পরোক্ষ টিম",
+    levelCName: "লেভেল সি সাব-টিম",
+    viewDailyCommBtn: "দৈনিক কমিশনের বিবরণ দেখুন",
+    refBoxTitle: "আমার আমন্ত্রণ কোড ও লিংক",
+    copyBtn: "কপি",
+    copiedToast: "রেফারাল লিংক কপি করা হয়েছে!",
+    // Profile Page
+    mePageTitle: "প্রোফাইল ও ওয়ালেট",
+    logoutBtn: "লগআউট",
+    meBtnRecharge: "রিচার্জ",
+    meBtnWithdraw: "উইথড্র",
+    walletsTitle: "ওয়ালেট সারসংক্ষেপ",
+    walletRecharge: "রিচার্জ ওয়ালেট",
+    walletBalance: "ব্যালেন্স ওয়ালেট",
+    walletInvest: "সক্রিয় বিনিয়োগ",
+    walletProfit: "মোট লাভ",
+    walletToday: "আজকের আয়",
+    walletTeam: "টিম আয়",
+    txHistoryTitle: "সাম্প্রতিক লেনদেন",
+    viewAllTx: "সব দেখুন →",
+    adminPortalTitle: "অ্যাডমিনিস্ট্রেটর কনসোল",
+    adminPortalSub: "ডিপোজিট ও উইথড্র যাচাই এবং ইউজার পরিচালনা",
+    // Modals
+    rechargeModalTitle: "রিচার্জ ওয়ালেট",
+    rechargeAgentTitle: "অফিসিয়াল ডিপোজিট নম্বর (পার্সোনাল / এজেন্ট)",
+    rechargeInstructions: "আপনার ওয়ালেট থেকে টাকা পাঠিয়ে নিচে সঠিক পরিমাণ ও ট্রানজেকশন আইডি প্রদান করুন। অ্যাডমিন অনুমোদনের পর জমা হবে।",
+    rechargeAmountLabel: "জমার পরিমাণ",
+    rechargeMethodLabel: "পেমেন্ট মাধ্যম",
+    rechargeSenderLabel: "প্রেরকের মোবাইল নম্বর",
+    rechargeTrxLabel: "ট্রানজেকশন আইডি (TrxID)",
+    rechargeSubmitBtn: "রিচার্জ অনুরোধ পাঠান",
+    withdrawModalTitle: "টাকা উত্তোলন করুন",
+    withdrawAvailLabel: "উত্তোলনযোগ্য ব্যালেন্স ওয়ালেট",
+    withdrawAmountLabel: "উত্তোলনের পরিমাণ",
+    withdrawMethodLabel: "পেমেন্ট মাধ্যম",
+    withdrawAccountLabel: "প্রাপকের অ্যাকাউন্ট / মোবাইল নম্বর",
+    withdrawNote: "অনুরোধ জমা দিলে ব্যালেন্স ওয়ালেট থেকে তাৎক্ষণিক কর্তন হবে। অ্যাডমিন অনুমোদনের পর টাকা পাঠানো হবে। বাতিল হলে অর্থ ফেরত আসবে।",
+    withdrawSubmitBtn: "উত্তোলন অনুরোধ পাঠান",
+    // Auth
+    loginNowBtn: "এখনই লগইন করুন",
+    createActBtn: "অ্যাকাউন্ট তৈরি করুন",
+    forgotPassLink: "পাসওয়ার্ড ভুলে গেছেন?",
+    bannerTagline: "টিভি আপগ্রেড করুন • জীবন উন্নত করুন"
+  }
+};
+
+// ==================== STATE MANAGEMENT ====================
+let currentLang = localStorage.getItem('ee_lang') || 'en';
+let currentCurrency = localStorage.getItem('ee_currency') || 'BDT'; // 'BDT' or 'USD'
+const EXCHANGE_RATE = 120.0; // 1 USD = 120 BDT (Configurable)
+
+let currentUser = null;
+let currentUserData = null;
+let currentCaptcha = { login: '', reg: '' };
+let currentProductFilter = 'Fixed Yields';
+let selectedRechargeMethod = 'bKash';
+let selectedWithdrawMethod = 'bKash';
+let selectedPackageForModal = null;
+
+// Demonstration Packages matching specifications & screenshots
+const PACKAGES_DATA = [
+  {
+    id: 'hope-rices-1',
+    name: 'Hope rices 1',
+    nameBn: 'হোপ রাইসেস ১',
+    category: 'Fixed Yields',
+    priceBDT: 10,
+    dailyReturnBDT: 0.90,
+    cycleDays: 30,
+    totalReturnBDT: 27,
+    vipReqLevel: 0,
+    reqDepositUSD: 10,
+    reqRefs: 3,
+    imageIcon: '🌾',
+    imageColor: 'from-amber-600 via-yellow-500 to-emerald-600',
+    hotDeal: true
+  },
+  {
+    id: 'hope-rices-2',
+    name: 'Hope rices 2',
+    nameBn: 'হোপ রাইসেস ২',
+    category: 'Fixed Yields',
+    priceBDT: 50,
+    dailyReturnBDT: 2.93,
+    cycleDays: 30,
+    totalReturnBDT: 88,
+    vipReqLevel: 1,
+    reqDepositUSD: 50,
+    reqRefs: 6,
+    imageIcon: '🌾',
+    imageColor: 'from-emerald-700 via-green-600 to-lime-600',
+    hotDeal: true
+  },
+  {
+    id: 'duck-farm',
+    name: 'DUCK FARM',
+    nameBn: 'ডাক ফার্ম',
+    category: 'Limited Offers',
+    priceBDT: 100,
+    dailyReturnBDT: 4.88,
+    cycleDays: 40,
+    totalReturnBDT: 195,
+    vipReqLevel: 2,
+    reqDepositUSD: 100,
+    reqRefs: 9,
+    imageIcon: '🦆',
+    imageColor: 'from-teal-700 via-cyan-600 to-blue-700',
+    hotDeal: true
+  },
+  {
+    id: 'flex-media-1',
+    name: 'MXQ Stream Flex',
+    nameBn: 'এমএক্সকিউ স্ট্রিম ফ্লেক্স',
+    category: 'Flexible Rates',
+    priceBDT: 30,
+    dailyReturnBDT: 1.25,
+    cycleDays: 20,
+    totalReturnBDT: 25,
+    vipReqLevel: 0,
+    reqDepositUSD: 25,
+    reqRefs: 2,
+    imageIcon: '📺',
+    imageColor: 'from-indigo-700 via-purple-600 to-pink-600',
+    hotDeal: false
+  },
+  {
+    id: 'premium-farm-4',
+    name: 'Elite Duck Incubator',
+    nameBn: 'এলিট ডাক ইনকিউবেটর',
+    category: 'Limited Offers',
+    priceBDT: 200,
+    dailyReturnBDT: 10.50,
+    cycleDays: 45,
+    totalReturnBDT: 472.5,
+    vipReqLevel: 3,
+    reqDepositUSD: 200,
+    reqRefs: 12,
+    imageIcon: '🥚',
+    imageColor: 'from-orange-600 via-amber-500 to-yellow-600',
+    hotDeal: true
+  }
+];
+
+// Helper to Format Currency Display
+function fmt(valBDT) {
+  valBDT = Number(valBDT) || 0;
+  if (currentCurrency === 'USD') {
+    const valUSD = valBDT / EXCHANGE_RATE;
+    return '$' + valUSD.toFixed(2);
+  }
+  return '৳' + valBDT.toFixed(2);
+}
+
+// Convert input amount to Base BDT if in USD
+function toBaseBDT(amount) {
+  amount = parseFloat(amount) || 0;
+  if (currentCurrency === 'USD') {
+    return amount * EXCHANGE_RATE;
+  }
+  return amount;
+}
+
+// ==================== MOCK DATA STORE (LOCAL PERSISTENCE) ====================
+function getLocalDB() {
+  const defaultDB = {
+    users: [
+      {
+        uid: 'user_default_01',
+        phone: '+8801811754943',
+        password: '123456',
+        role: 'user',
+        rechargeWallet: 150.0,
+        balanceWallet: 20.0,
+        activeInvest: 0.0,
+        profitEarned: 0.0,
+        incomeToday: 0.0,
+        teamIncome: 0.0,
+        activeVipLevel: 0,
+        referralCode: 'EE88091',
+        referredBy: null,
+        totalDeposit: 150.0,
+        activeReferrals: 0,
+        createdAt: new Date().toISOString()
+      },
+      {
+        uid: 'admin_master_01',
+        phone: '+8801700000000',
+        password: 'admin123',
+        role: 'admin',
+        rechargeWallet: 99999.0,
+        balanceWallet: 99999.0,
+        activeInvest: 0.0,
+        profitEarned: 0.0,
+        incomeToday: 0.0,
+        teamIncome: 0.0,
+        activeVipLevel: 5,
+        referralCode: 'EEADMIN',
+        referredBy: null,
+        totalDeposit: 0.0,
+        activeReferrals: 0,
+        createdAt: new Date().toISOString()
+      }
+    ],
+    deposits: [],
+    withdrawals: [],
+    investments: [],
+    transactions: [],
+    commissionRecords: []
+  };
+
+  const stored = localStorage.getItem('ee_local_db_v2');
+  if (!stored) {
+    localStorage.setItem('ee_local_db_v2', JSON.stringify(defaultDB));
+    return defaultDB;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch(e) {
+    localStorage.setItem('ee_local_db_v2', JSON.stringify(defaultDB));
+    return defaultDB;
+  }
+}
+
+function saveLocalDB(data) {
+  localStorage.setItem('ee_local_db_v2', JSON.stringify(data));
+}
+
+// ==================== TOAST MESSAGES ====================
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-purple-700';
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  
+  toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-2xl text-white text-xs font-bold shadow-xl slide-up ${bgClass} transition-all duration-300 pointer-events-auto`;
+  toast.innerHTML = `<span class="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center shrink-0 font-black">${icon}</span><span class="flex-1">${message}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3200);
+}
+
+// ==================== LANGUAGE & CURRENCY SWITCHING ====================
+function toggleLangMenu() {
+  const menu = document.getElementById('lang-dropdown');
+  menu.classList.toggle('hidden');
+}
+
+function setLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('ee_lang', lang);
+  document.getElementById('lang-dropdown').classList.add('hidden');
+  applyTranslations();
+  showToast(lang === 'bn' ? 'ভাষা বাংলা নির্বাচন করা হয়েছে' : 'Language set to English', 'success');
+}
+
+function toggleLanguage() {
+  setLanguage(currentLang === 'en' ? 'bn' : 'en');
+}
+
+function toggleCurrencyMenu() {
+  const menu = document.getElementById('currency-dropdown');
+  menu.classList.toggle('hidden');
+}
+
+function setCurrency(curr) {
+  currentCurrency = curr;
+  localStorage.setItem('ee_currency', curr);
+  document.getElementById('currency-dropdown').classList.add('hidden');
+  applyTranslations();
+  showToast(curr === 'USD' ? 'Currency: USD ($)' : 'কারেন্সি: BDT (৳)', 'info');
+}
+
+function applyTranslations() {
+  const t = I18N[currentLang] || I18N.en;
+
+  // Header
+  document.getElementById('current-lang-display').textContent = currentLang === 'bn' ? '🇧🇩 BN' : '🇬🇧 EN';
+  document.getElementById('auth-lang-label').textContent = currentLang === 'bn' ? 'বাংলা' : 'English';
+  document.getElementById('auth-lang-flag').textContent = currentLang === 'bn' ? '🇧🇩' : '🇬🇧';
+  document.getElementById('current-currency-display').textContent = currentCurrency === 'USD' ? 'USD ($)' : 'BDT (৳)';
+  document.getElementById('header-subtitle').textContent = t.headerSubtitle;
+
+  // Ticker & Banner
+  document.getElementById('ticker-badge').textContent = t.noticeBadge;
+  document.getElementById('announcement-ticker-text').textContent = t.tickerText;
+  document.getElementById('banner-tagline').textContent = t.bannerTagline;
+
+  // Quick Services
+  document.getElementById('qs-title').textContent = t.qsTitle;
+  document.getElementById('qs-subtitle').textContent = t.qsSubtitle;
+  document.getElementById('qs-recharge').textContent = t.qsRecharge;
+  document.getElementById('qs-withdraw').textContent = t.qsWithdraw;
+  document.getElementById('qs-myproduct').textContent = t.qsMyProduct;
+  document.getElementById('qs-commission').textContent = t.qsCommission;
+  document.getElementById('qs-download').textContent = t.qsDownload;
+  document.getElementById('qs-online').textContent = t.qsOnline;
+  document.getElementById('qs-invitation').textContent = t.qsInvitation;
+  document.getElementById('qs-salary').textContent = t.qsSalary;
+  document.getElementById('official-video-title').innerHTML = `<span class="text-pink-500">▶</span> ${t.officialVideoTitle}`;
+  document.getElementById('featured-pkg-title').textContent = t.featuredPkgTitle;
+  document.getElementById('see-all-pkg-btn').innerHTML = `<span>${t.seeAll}</span>`;
+
+  // Nav
+  document.getElementById('nav-lbl-home').textContent = t.navHome;
+  document.getElementById('nav-lbl-product').textContent = t.navProduct;
+  document.getElementById('nav-lbl-vip').textContent = t.navVip;
+  document.getElementById('nav-lbl-team').textContent = t.navTeam;
+  document.getElementById('nav-lbl-me').textContent = t.navMe;
+
+  // Product Page
+  document.getElementById('product-page-title').textContent = t.productPageTitle;
+  document.getElementById('filter-pill-fixed').textContent = t.filterFixed;
+  document.getElementById('filter-pill-flexible').textContent = t.filterFlexible;
+  document.getElementById('filter-pill-limited').textContent = t.filterLimited;
+  document.getElementById('risk-disclosure-title').textContent = t.riskTitle;
+  document.getElementById('risk-disclosure-body').textContent = t.riskBody;
+
+  // VIP Page
+  document.getElementById('vip-page-title').textContent = t.vipPageTitle;
+  document.getElementById('vip-tier-subtitle').textContent = t.vipCurrentTier;
+  document.getElementById('vip-system-mode-label').textContent = t.vipSystemModeLabel;
+  document.getElementById('vip-system-mode-value').textContent = t.vipSystemModeVal;
+  document.getElementById('vip-total-deposit-label').textContent = t.vipTotalDeposit;
+  document.getElementById('vip-total-invest-label').textContent = t.vipTotalInvest;
+  document.getElementById('vip-active-refs-label').textContent = t.vipActiveRefs;
+  document.getElementById('vip-levels-title').textContent = t.vipLevelsTitle;
+
+  // Team Page
+  document.getElementById('team-page-title').textContent = t.teamPageTitle;
+  document.getElementById('team-income-label').textContent = t.teamIncomeLabel;
+  document.getElementById('team-cumulative-label').textContent = t.teamCumulativeLabel;
+  document.getElementById('team-stat-total-label').textContent = t.teamTotalMembers;
+  document.getElementById('team-stat-invest-label').textContent = t.teamTotalInvest;
+  document.getElementById('team-stat-withdraw-label').textContent = t.teamWithdraw;
+  document.getElementById('team-stat-commission-label').textContent = t.teamCommission;
+  document.getElementById('team-tiers-title').textContent = t.teamTiersTitle;
+  document.getElementById('tier-a-name').textContent = t.levelAName;
+  document.getElementById('tier-b-name').textContent = t.levelBName;
+  document.getElementById('tier-c-name').textContent = t.levelCName;
+  document.getElementById('btn-daily-comm-details').textContent = t.viewDailyCommBtn;
+  document.getElementById('ref-box-title').textContent = t.refBoxTitle;
+  document.getElementById('btn-copy-ref').textContent = t.copyBtn;
+
+  // Profile / Me Page
+  document.getElementById('me-page-title').textContent = t.mePageTitle;
+  document.getElementById('btn-logout').textContent = t.logoutBtn;
+  document.getElementById('me-btn-recharge').textContent = t.meBtnRecharge;
+  document.getElementById('me-btn-withdraw').textContent = t.meBtnWithdraw;
+  document.getElementById('wallets-overview-title').textContent = t.walletsTitle;
+  document.getElementById('wallet-recharge-label').textContent = t.walletRecharge;
+  document.getElementById('wallet-balance-label').textContent = t.walletBalance;
+  document.getElementById('wallet-invest-label').textContent = t.walletInvest;
+  document.getElementById('wallet-profit-label').textContent = t.walletProfit;
+  document.getElementById('wallet-today-label').textContent = t.walletToday;
+  document.getElementById('wallet-team-income-label').textContent = t.walletTeam;
+  document.getElementById('tx-history-title').textContent = t.txHistoryTitle;
+  document.getElementById('tx-view-all').textContent = t.viewAllTx;
+  document.getElementById('admin-portal-title').textContent = t.adminPortalTitle;
+  document.getElementById('admin-portal-sub').textContent = t.adminPortalSub;
+
+  // Modals
+  document.getElementById('m-recharge-title').textContent = t.rechargeModalTitle;
+  document.getElementById('m-recharge-agent-title').textContent = t.rechargeAgentTitle;
+  document.getElementById('m-recharge-instruction').textContent = t.rechargeInstructions;
+  document.getElementById('m-recharge-amount-label').textContent = `${t.rechargeAmountLabel} (${currentCurrency === 'USD' ? '$' : '৳'})`;
+  document.getElementById('m-recharge-method-label').textContent = t.rechargeMethodLabel;
+  document.getElementById('m-recharge-sender-label').textContent = t.rechargeSenderLabel;
+  document.getElementById('m-recharge-trx-label').textContent = t.rechargeTrxLabel;
+  document.getElementById('m-recharge-submit-btn').textContent = t.rechargeSubmitBtn;
+
+  document.getElementById('m-withdraw-title').textContent = t.withdrawModalTitle;
+  document.getElementById('m-withdraw-avail-label').textContent = t.withdrawAvailLabel;
+  document.getElementById('m-withdraw-amount-label').textContent = `${t.withdrawAmountLabel} (${currentCurrency === 'USD' ? '$' : '৳'})`;
+  document.getElementById('m-withdraw-method-label').textContent = t.withdrawMethodLabel;
+  document.getElementById('m-withdraw-account-label').textContent = t.withdrawAccountLabel;
+  document.getElementById('m-withdraw-note').textContent = t.withdrawNote;
+  document.getElementById('m-withdraw-submit-btn').textContent = t.withdrawSubmitBtn;
+
+  // Auth screen
+  document.getElementById('login-btn-text').textContent = t.loginNowBtn;
+  document.getElementById('link-forgot-pass').textContent = t.forgotPassLink;
+  document.getElementById('link-create-act').textContent = t.createActBtn + " →";
+
+  // Re-render components with new language & currency
+  renderProductCards();
+  renderFeaturedPackages();
+  renderVipLevels();
+  updateUserUI();
+}
+
+// ==================== GRAPHIC CAPTCHA GENERATOR ====================
+function generateCaptcha(target = 'login') {
+  const canvas = document.getElementById(`${target}-captcha-canvas`);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  currentCaptcha[target] = code;
+
+  // Draw stylized graphic code
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 18px "Courier New", monospace';
+  ctx.textBaseline = 'middle';
+  
+  for (let i = 0; i < 4; i++) {
+    ctx.save();
+    const x = 12 + i * 16;
+    const y = canvas.height / 2;
+    ctx.translate(x, y);
+    ctx.rotate((Math.random() - 0.5) * 0.4);
+    ctx.fillText(code[i], 0, 0);
+    ctx.restore();
+  }
+
+  // Draw subtle interference lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(2, Math.random() * canvas.height);
+  ctx.lineTo(canvas.width - 2, Math.random() * canvas.height);
+  ctx.stroke();
+}
+
+// ==================== AUTHENTICATION LOGIC ====================
+function switchAuthTab(tab) {
+  const loginView = document.getElementById('login-form-view');
+  const registerView = document.getElementById('register-form-view');
+  const pillLogin = document.getElementById('auth-pill-login');
+  const pillRegister = document.getElementById('auth-pill-register');
+
+  if (tab === 'login') {
+    loginView.classList.remove('hidden');
+    registerView.classList.add('hidden');
+    pillLogin.className = 'flex-1 py-2 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm';
+    pillRegister.className = 'flex-1 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-800';
+    generateCaptcha('login');
+  } else {
+    loginView.classList.add('hidden');
+    registerView.classList.remove('hidden');
+    pillRegister.className = 'flex-1 py-2 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm';
+    pillLogin.className = 'flex-1 py-2 rounded-xl text-sm font-bold transition-all text-slate-500 hover:text-slate-800';
+    generateCaptcha('reg');
+  }
+}
+
+function togglePasswordVisibility(inputId, iconId) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+  } else {
+    input.type = 'password';
+  }
+}
+
+async function handleLoginSubmit() {
+  const phone = document.getElementById('login-phone').value.trim();
+  const password = document.getElementById('login-password').value;
+  const captcha = document.getElementById('login-captcha-input').value.trim().toUpperCase();
+
+  if (!phone || phone.length < 10) {
+    showToast(currentLang === 'bn' ? 'সঠিক মোবাইল নম্বর দিন' : 'Please enter a valid mobile number', 'error');
+    return;
+  }
+  if (!password) {
+    showToast(currentLang === 'bn' ? 'পাসওয়ার্ড দিন' : 'Please enter your password', 'error');
+    return;
+  }
+  if (captcha !== currentCaptcha.login) {
+    showToast(currentLang === 'bn' ? 'ভুল ভেরিফিকেশন কোড' : 'Invalid verification code', 'error');
+    generateCaptcha('login');
+    return;
+  }
+
+  const normalizedPhone = phone.startsWith('+880') ? phone : '+880' + phone.replace(/^0/, '');
+  const btn = document.getElementById('btn-login-submit');
+  btn.disabled = true;
+  btn.classList.add('opacity-75');
+
+  try {
+    let authenticatedUser = null;
+
+    // Check Firebase Firestore if available
+    if (isFirebaseConnected && db) {
+      try {
+        const snap = await db.collection('users').where('phone', '==', normalizedPhone).limit(1).get();
+        if (!snap.empty) {
+          const doc = snap.docs[0];
+          const data = doc.data();
+          if (data.password === password) {
+            authenticatedUser = { uid: doc.id, ...data };
+          }
+        }
+      } catch(fbErr) {
+        console.warn('Firebase query fallback:', fbErr.message);
+      }
+    }
+
+    // Local DB fallback for safe testing and offline use
+    if (!authenticatedUser) {
+      const localDB = getLocalDB();
+      const match = localDB.users.find(u => u.phone === normalizedPhone && u.password === password);
+      if (match) {
+        authenticatedUser = match;
+      }
+    }
+
+    if (!authenticatedUser) {
+      showToast(currentLang === 'bn' ? 'ভুল নম্বর অথবা পাসওয়ার্ড' : 'Invalid mobile number or password', 'error');
+      generateCaptcha('login');
+      btn.disabled = false;
+      btn.classList.remove('opacity-75');
+      return;
+    }
+
+    currentUser = authenticatedUser;
+    currentUserData = authenticatedUser;
+    localStorage.setItem('ee_active_uid', authenticatedUser.uid);
+
+    showToast(currentLang === 'bn' ? 'লগইন সফল হয়েছে!' : 'Login successful!', 'success');
+    enterMainApp();
+  } catch(e) {
+    showToast('Login error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove('opacity-75');
+  }
+}
+
+async function handleRegisterSubmit() {
+  const phone = document.getElementById('reg-phone').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const confirm = document.getElementById('reg-confirm').value;
+  const referral = document.getElementById('reg-referral').value.trim();
+  const captcha = document.getElementById('reg-captcha-input').value.trim().toUpperCase();
+
+  if (!phone || phone.length < 10) {
+    showToast(currentLang === 'bn' ? 'সঠিক মোবাইল নম্বর দিন' : 'Please enter a valid mobile number', 'error');
+    return;
+  }
+  if (!password || password.length < 6) {
+    showToast(currentLang === 'bn' ? 'কমপক্ষে ৬ ডিজিটের পাসওয়ার্ড দিন' : 'Password must be at least 6 characters', 'error');
+    return;
+  }
+  if (password !== confirm) {
+    showToast(currentLang === 'bn' ? 'পাসওয়ার্ড দুটি মিলছে না' : 'Passwords do not match', 'error');
+    return;
+  }
+  if (captcha !== currentCaptcha.reg) {
+    showToast(currentLang === 'bn' ? 'ভুল ভেরিফিকেশন কোড' : 'Invalid verification code', 'error');
+    generateCaptcha('reg');
+    return;
+  }
+
+  const normalizedPhone = phone.startsWith('+880') ? phone : '+880' + phone.replace(/^0/, '');
+  const referralCode = 'EE' + Math.floor(100000 + Math.random() * 900000);
+  const uid = 'usr_' + Date.now();
+
+  const newUser = {
+    uid: uid,
+    phone: normalizedPhone,
+    password: password,
+    role: 'user',
+    rechargeWallet: 0.0,
+    balanceWallet: 20.0, // Welcome bonus of ৳20
+    activeInvest: 0.0,
+    profitEarned: 0.0,
+    incomeToday: 0.0,
+    teamIncome: 0.0,
+    activeVipLevel: 0,
+    referralCode: referralCode,
+    referredBy: referral || null,
+    totalDeposit: 0.0,
+    activeReferrals: 0,
+    createdAt: new Date().toISOString()
+  };
+
+  const localDB = getLocalDB();
+  const exists = localDB.users.some(u => u.phone === normalizedPhone);
+  if (exists) {
+    showToast(currentLang === 'bn' ? 'এই নম্বর দিয়ে ইতিমধ্যেই একাউন্ট আছে' : 'Phone already registered', 'error');
+    return;
+  }
+
+  // Save to local store
+  localDB.users.push(newUser);
+  saveLocalDB(localDB);
+
+  // Sync to Firestore if online
+  if (isFirebaseConnected && db) {
+    try {
+      await db.collection('users').doc(uid).set(newUser);
+    } catch(e) {
+      console.warn('Firebase store sync note:', e.message);
+    }
+  }
+
+  currentUser = newUser;
+  currentUserData = newUser;
+  localStorage.setItem('ee_active_uid', uid);
+
+  showToast(currentLang === 'bn' ? 'অভিনন্দন! একাউন্ট তৈরি সফল (৳২০ বোনাস)' : 'Registration successful! (৳20 bonus added)', 'success');
+  enterMainApp();
+}
+
+function handleLogout() {
+  currentUser = null;
+  currentUserData = null;
+  localStorage.removeItem('ee_active_uid');
+  document.getElementById('main-app').classList.add('hidden');
+  document.getElementById('bottom-nav').classList.add('hidden');
+  document.getElementById('app-header').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+  generateCaptcha('login');
+  showToast(currentLang === 'bn' ? 'লগআউট সম্পন্ন হয়েছে' : 'Logged out successfully', 'info');
+}
+
+function enterMainApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app-header').classList.remove('hidden');
+  document.getElementById('main-app').classList.remove('hidden');
+  document.getElementById('bottom-nav').classList.remove('hidden');
+
+  updateUserUI();
+  switchTab('home');
+  startCarouselTimer();
+}
+
+// ==================== UI DATA BINDING ====================
+function updateUserUI() {
+  if (!currentUserData) return;
+
+  // Wallets Display
+  document.getElementById('val-recharge-wallet').textContent = fmt(currentUserData.rechargeWallet);
+  document.getElementById('val-balance-wallet').textContent = fmt(currentUserData.balanceWallet);
+  document.getElementById('val-active-invest').textContent = fmt(currentUserData.activeInvest);
+  document.getElementById('val-profit-earned').textContent = fmt(currentUserData.profitEarned);
+  document.getElementById('val-income-today').textContent = fmt(currentUserData.incomeToday);
+  document.getElementById('val-team-income').textContent = fmt(currentUserData.teamIncome);
+
+  // Profile Header
+  const displayPhone = currentUserData.phone.replace('+880', '0');
+  document.getElementById('me-user-phone').textContent = displayPhone;
+  document.getElementById('me-user-id').textContent = 'ID: ' + (currentUserData.referralCode || 'EE0000');
+  document.getElementById('me-vip-pill').textContent = 'VIP ' + (currentUserData.activeVipLevel || 0);
+
+  // VIP Tab Hero
+  document.getElementById('vip-user-tier-text').textContent = 'VIP ' + (currentUserData.activeVipLevel || 0);
+  document.getElementById('vip-user-badge').innerHTML = `<span>💡</span> Level ${currentUserData.activeVipLevel || 0}`;
+  document.getElementById('vip-total-deposit-val').textContent = fmt(currentUserData.totalDeposit || 0);
+  document.getElementById('vip-total-invest-val').textContent = fmt(currentUserData.activeInvest || 0);
+  document.getElementById('vip-active-refs-val').textContent = (currentUserData.activeReferrals || 0).toString();
+
+  // Team Tab Hero
+  document.getElementById('team-total-income-val').textContent = fmt(currentUserData.teamIncome || 0);
+  document.getElementById('team-valid-count').textContent = (currentUserData.activeReferrals || 0).toString();
+  document.getElementById('team-cumulative-val').textContent = fmt(currentUserData.totalDeposit || 0);
+  document.getElementById('team-stat-total-members').textContent = (currentUserData.activeReferrals || 0).toString();
+  document.getElementById('team-stat-total-invest').textContent = fmt(currentUserData.activeInvest || 0);
+  document.getElementById('team-stat-total-withdraw').textContent = fmt(0);
+  document.getElementById('team-stat-total-commission').textContent = fmt(currentUserData.teamIncome || 0);
+
+  // Referral Code & Link Box
+  const refCode = currentUserData.referralCode || 'EE88091';
+  document.getElementById('display-ref-code').textContent = refCode;
+  const origin = window.location.origin + window.location.pathname;
+  document.getElementById('shareable-ref-link').value = `${origin}?ref=${refCode}`;
+
+  // Withdrawable Balance in Withdraw Modal
+  document.getElementById('m-withdraw-avail-val').textContent = fmt(currentUserData.balanceWallet);
+
+  renderRecentTransactions();
+}
+
+// ==================== NAVIGATION & TABS ====================
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+  document.querySelectorAll('.nav-item').forEach(btn => {
+    btn.classList.remove('text-purple-600', 'font-black');
+    btn.classList.add('text-slate-400', 'font-semibold');
+  });
+
+  const activePane = document.getElementById('tab-' + tabName);
+  if (activePane) activePane.classList.remove('hidden');
+
+  const activeNav = document.querySelector(`[data-tab="${tabName}"]`);
+  if (activeNav) {
+    activeNav.classList.remove('text-slate-400', 'font-semibold');
+    activeNav.classList.add('text-purple-600', 'font-black');
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ==================== PRODUCT RENDERING ====================
+function setProductFilter(category) {
+  currentProductFilter = category;
+  document.querySelectorAll('.product-filter-pill').forEach(pill => {
+    if (pill.dataset.category === category) {
+      pill.className = 'product-filter-pill px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-sm shrink-0';
+    } else {
+      pill.className = 'product-filter-pill px-4 py-2 rounded-full text-xs font-bold transition-all bg-white text-slate-600 border border-slate-200 shrink-0';
+    }
+  });
+  renderProductCards();
+}
+
+function renderProductCards() {
+  const container = document.getElementById('product-cards-container');
+  if (!container) return;
+
+  const filtered = PACKAGES_DATA.filter(p => p.category === currentProductFilter);
+  const t = I18N[currentLang] || I18N.en;
+
+  container.innerHTML = filtered.map(pkg => {
+    const isLocked = (currentUserData?.activeVipLevel || 0) < pkg.vipReqLevel;
+    const displayName = currentLang === 'bn' ? pkg.nameBn : pkg.name;
+
+    return `
+      <div class="bg-white rounded-3xl overflow-hidden card-shadow border border-slate-100 flex flex-col transition-all">
+        <!-- Card Top Visual Banner with Image & Badges -->
+        <div class="relative h-28 bg-gradient-to-r ${pkg.imageColor} p-3 flex items-center justify-between text-white overflow-hidden">
+          <div class="z-10">
+            <span class="text-xs font-black tracking-wider uppercase opacity-90 drop-shadow">${pkg.category}</span>
+            <h4 class="text-base font-black leading-tight drop-shadow">${displayName}</h4>
+          </div>
+          <!-- Visual Crop / Duck / Box Icon -->
+          <div class="text-5xl filter drop-shadow-md select-none">${pkg.imageIcon}</div>
+          
+          <!-- HOT DEAL Badge on top-right (Matching Screenshot 3) -->
+          <div class="absolute top-2.5 right-2.5 badge-hot text-white text-[9px] font-black tracking-wider uppercase px-2 py-0.5 rounded-md shadow-sm">
+            ${t.hotDealBadge}
+          </div>
+
+          <!-- VIP Level Badge on bottom-left of image (Matching Screenshot 3) -->
+          <div class="absolute bottom-2 left-2.5 bg-black/60 backdrop-blur-xs text-white text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1 border border-white/20">
+            <span>VIP ${pkg.vipReqLevel}</span>
+          </div>
+        </div>
+
+        <!-- 3-Column Stats Row: Price, Daily, Cycle (Matching Screenshot 3) -->
+        <div class="p-4 space-y-3">
+          <div class="grid grid-cols-3 gap-2 bg-slate-50/80 rounded-2xl p-2.5 border border-slate-100 text-center">
+            <div>
+              <span class="text-[10px] text-slate-400 font-bold block">${t.priceLabel}</span>
+              <span class="text-xs font-black text-slate-800">${fmt(pkg.priceBDT)}</span>
+            </div>
+            <div class="border-x border-slate-200">
+              <span class="text-[10px] text-slate-400 font-bold block">${t.dailyLabel}</span>
+              <span class="text-xs font-black text-emerald-600">+${fmt(pkg.dailyReturnBDT)}</span>
+            </div>
+            <div>
+              <span class="text-[10px] text-slate-400 font-bold block">${t.cycleLabel}</span>
+              <span class="text-xs font-black text-blue-600">${pkg.cycleDays}d</span>
+            </div>
+          </div>
+
+          <!-- Total Return & Action Button Row -->
+          <div class="flex items-center justify-between pt-1">
+            <div>
+              <span class="text-[10px] text-slate-400 font-bold block">${t.totalReturnLabel}:</span>
+              <span class="text-sm font-black text-amber-500">${fmt(pkg.totalReturnBDT)}</span>
+            </div>
+
+            <button onclick="openPackageModal('${pkg.id}')" class="gradient-btn text-white text-xs font-black px-5 py-2.5 rounded-xl shadow-md flex items-center gap-1.5 active:scale-95 transition-transform ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}">
+              <span>${isLocked ? '🔒 ' + t.lockedBadge : t.marketingPlanBtn}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderFeaturedPackages() {
+  const container = document.getElementById('home-featured-packages-list');
+  if (!container) return;
+
+  const featured = PACKAGES_DATA.slice(0, 3);
+  const t = I18N[currentLang] || I18N.en;
+
+  container.innerHTML = featured.map(pkg => {
+    const displayName = currentLang === 'bn' ? pkg.nameBn : pkg.name;
+    return `
+      <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${pkg.imageColor} flex items-center justify-center text-2xl shadow-sm text-white">
+            ${pkg.imageIcon}
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="font-black text-xs text-slate-800">${displayName}</span>
+              <span class="badge-hot text-white text-[8px] font-black px-1.5 py-0.2 rounded">${t.hotDealBadge}</span>
+            </div>
+            <div class="text-[11px] text-slate-500 font-medium mt-0.5">
+              ${t.priceLabel}: <b class="text-purple-600">${fmt(pkg.priceBDT)}</b> • ${t.dailyLabel}: <b class="text-emerald-600">${fmt(pkg.dailyReturnBDT)}</b>
+            </div>
+          </div>
+        </div>
+        <button onclick="openPackageModal('${pkg.id}')" class="bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs font-extrabold px-3 py-1.5 rounded-xl transition-colors shrink-0">
+          Plan →
+        </button>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==================== VIP LEVELS RENDERING ====================
+function renderVipLevels() {
+  const container = document.getElementById('vip-levels-list');
+  if (!container) return;
+  const t = I18N[currentLang] || I18N.en;
+
+  container.innerHTML = PACKAGES_DATA.slice(0, 3).map((pkg, idx) => {
+    const isUnlocked = (currentUserData?.activeVipLevel || 0) >= (idx);
+    const displayName = currentLang === 'bn' ? pkg.nameBn : pkg.name;
+
+    return `
+      <div class="bg-white rounded-2xl p-3.5 card-shadow border border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-11 h-11 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center text-xl shadow-inner shrink-0">
+            🎖
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-black text-xs text-slate-800">${displayName}</span>
+              <span class="bg-emerald-50 text-emerald-700 text-[10px] font-black px-2 py-0.5 rounded-md flex items-center gap-1">
+                <span>🎁</span> ${fmt(pkg.dailyReturnBDT)}
+              </span>
+            </div>
+            <div class="text-[11px] text-slate-400 font-medium mt-0.5">
+              ${t.reqLabel} $${pkg.reqDepositUSD}.00 ${t.orLabel} ${pkg.reqRefs} ${t.refsLabel}
+            </div>
+          </div>
+        </div>
+        <div>
+          ${isUnlocked 
+            ? `<span class="bg-emerald-500 text-white text-[10px] font-black px-3 py-1 rounded-full flex items-center gap-1 shadow-xs"><span>✓</span> ${t.activeBadge}</span>`
+            : `<span class="bg-slate-100 text-slate-400 text-[10px] font-black px-3 py-1 rounded-full flex items-center gap-1"><span>🔒</span> ${t.lockedBadge}</span>`
+          }
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ==================== TRANSACTION ACTIONS & MODALS ====================
+
+// RECHARGE
+function openRechargeModal() {
+  document.getElementById('modal-recharge').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function closeRechargeModal() {
+  document.getElementById('modal-recharge').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function setQuickRecharge(valBDT) {
+  document.getElementById('recharge-input-amount').value = currentCurrency === 'USD' ? (valBDT / EXCHANGE_RATE).toFixed(2) : valBDT;
+}
+
+function selectRechargeMethod(method) {
+  selectedRechargeMethod = method;
+  document.querySelectorAll('.recharge-method-btn').forEach(btn => {
+    if (btn.dataset.method === method) {
+      btn.className = 'recharge-method-btn py-2.5 rounded-xl border-2 border-purple-500 bg-purple-50 text-purple-700 font-bold text-xs';
+    } else {
+      btn.className = 'recharge-method-btn py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs';
+    }
+  });
+}
+
+let currentProofImageBase64 = null;
+
+function handleProofImageSelected(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('File size must be less than 5 MB', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentProofImageBase64 = e.target.result;
+    const preview = document.getElementById('recharge-proof-preview');
+    const img = document.getElementById('recharge-proof-img');
+    const btnText = document.getElementById('recharge-proof-btn-text');
+    if (preview && img) {
+      img.src = currentProofImageBase64;
+      preview.classList.remove('hidden');
+    }
+    if (btnText) {
+      btnText.textContent = 'Receipt Attached ✓';
+    }
+    showToast('Payment receipt attached', 'success');
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeProofImage(event) {
+  if (event) event.stopPropagation();
+  currentProofImageBase64 = null;
+  const fileInput = document.getElementById('recharge-proof-file');
+  if (fileInput) fileInput.value = '';
+  const preview = document.getElementById('recharge-proof-preview');
+  if (preview) preview.classList.add('hidden');
+  const btnText = document.getElementById('recharge-proof-btn-text');
+  if (btnText) btnText.textContent = 'Attach Receipt / Slip';
+}
+
+async function submitRechargeRequest() {
+  const amountInput = parseFloat(document.getElementById('recharge-input-amount').value);
+  const senderPhone = document.getElementById('recharge-input-sender').value.trim();
+  const trxId = document.getElementById('recharge-input-trx').value.trim().toUpperCase();
+
+  if (!amountInput || amountInput <= 0) {
+    showToast(currentLang === 'bn' ? 'সঠিক জমার পরিমাণ দিন' : 'Please enter a valid deposit amount', 'error');
+    return;
+  }
+  if (!senderPhone || senderPhone.length < 10) {
+    showToast(currentLang === 'bn' ? 'প্রেরকের মোবাইল নম্বর দিন' : 'Please enter sender mobile number', 'error');
+    return;
+  }
+  if (!trxId || trxId.length < 4) {
+    showToast(currentLang === 'bn' ? 'ট্রানজেকশন আইডি (TrxID) দিন' : 'Please enter transaction ID', 'error');
+    return;
+  }
+
+  const baseAmountBDT = toBaseBDT(amountInput);
+  const depositDoc = {
+    id: 'dep_' + Date.now(),
+    userId: currentUser.uid,
+    userPhone: currentUser.phone,
+    amountBDT: baseAmountBDT,
+    paymentMethod: selectedRechargeMethod,
+    senderPhone: senderPhone,
+    transactionId: trxId,
+    proofImage: currentProofImageBase64 || null,
+    status: 'pending', // Pending admin verification
+    createdAt: new Date().toISOString()
+  };
+
+  const localDB = getLocalDB();
+  localDB.deposits.push(depositDoc);
+  localDB.transactions.push({
+    id: 'tx_' + Date.now(),
+    userId: currentUser.uid,
+    type: 'deposit',
+    title: `Deposit via ${selectedRechargeMethod}`,
+    amountBDT: baseAmountBDT,
+    status: 'pending',
+    date: new Date().toISOString()
+  });
+  saveLocalDB(localDB);
+
+  // Sync with Firestore & Firebase Storage if active
+  if (isFirebaseConnected && db) {
+    try {
+      await db.collection('deposits').doc(depositDoc.id).set(depositDoc);
+    } catch(e) {
+      console.warn('Firebase deposit sync note:', e.message);
+    }
+  }
+
+  closeRechargeModal();
+  document.getElementById('recharge-input-amount').value = '';
+  document.getElementById('recharge-input-sender').value = '';
+  document.getElementById('recharge-input-trx').value = '';
+  removeProofImage();
+
+  showToast(currentLang === 'bn' ? 'রিচার্জ অনুরোধ জমা হয়েছে! অ্যাডমিন যাচাই করার পর ব্যালেন্স যোগ হবে।' : 'Recharge submitted! Pending administrator verification.', 'success');
+  updateUserUI();
+}
+
+// WITHDRAW
+function openWithdrawModal() {
+  document.getElementById('modal-withdraw').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  document.getElementById('m-withdraw-avail-val').textContent = fmt(currentUserData?.balanceWallet || 0);
+}
+
+function closeWithdrawModal() {
+  document.getElementById('modal-withdraw').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function selectWithdrawMethod(method) {
+  selectedWithdrawMethod = method;
+  document.querySelectorAll('.withdraw-method-btn').forEach(btn => {
+    if (btn.dataset.method === method) {
+      btn.className = 'withdraw-method-btn py-2.5 rounded-xl border-2 border-emerald-500 bg-emerald-50 text-emerald-700 font-bold text-xs';
+    } else {
+      btn.className = 'withdraw-method-btn py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs';
+    }
+  });
+}
+
+async function submitWithdrawRequest() {
+  const amountInput = parseFloat(document.getElementById('withdraw-input-amount').value);
+  const accountNum = document.getElementById('withdraw-input-account').value.trim();
+
+  const minBDT = 100.0;
+  const baseAmountBDT = toBaseBDT(amountInput);
+
+  if (!baseAmountBDT || baseAmountBDT < minBDT) {
+    showToast(currentLang === 'bn' ? `সর্বনিম্ন উত্তোলন ৳${minBDT}` : `Minimum withdrawal is ${fmt(minBDT)}`, 'error');
+    return;
+  }
+  if (!accountNum || accountNum.length < 10) {
+    showToast(currentLang === 'bn' ? 'সঠিক প্রাপক একাউন্ট নম্বর দিন' : 'Please enter recipient account number', 'error');
+    return;
+  }
+
+  const currentBal = currentUserData.balanceWallet || 0;
+  if (currentBal < baseAmountBDT) {
+    showToast(currentLang === 'bn' ? 'পর্যাপ্ত উত্তোলনযোগ্য ব্যালেন্স নেই' : 'Insufficient Balance Wallet funds', 'error');
+    return;
+  }
+
+  // Deduct funds atomically from Balance Wallet and store pending request
+  currentUserData.balanceWallet -= baseAmountBDT;
+
+  const withdrawDoc = {
+    id: 'wd_' + Date.now(),
+    userId: currentUser.uid,
+    userPhone: currentUser.phone,
+    amountBDT: baseAmountBDT,
+    paymentMethod: selectedWithdrawMethod,
+    accountNumber: accountNum,
+    status: 'pending',
+    createdAt: new Date().toISOString()
+  };
+
+  const localDB = getLocalDB();
+  const uIdx = localDB.users.findIndex(u => u.uid === currentUser.uid);
+  if (uIdx !== -1) {
+    localDB.users[uIdx].balanceWallet = currentUserData.balanceWallet;
+  }
+  localDB.withdrawals.push(withdrawDoc);
+  localDB.transactions.push({
+    id: 'tx_' + Date.now(),
+    userId: currentUser.uid,
+    type: 'withdrawal',
+    title: `Withdrawal via ${selectedWithdrawMethod}`,
+    amountBDT: -baseAmountBDT,
+    status: 'pending',
+    date: new Date().toISOString()
+  });
+  saveLocalDB(localDB);
+
+  // Sync to Firestore
+  if (isFirebaseConnected && db) {
+    try {
+      await db.collection('withdrawals').doc(withdrawDoc.id).set(withdrawDoc);
+      await db.collection('users').doc(currentUser.uid).update({ balanceWallet: currentUserData.balanceWallet });
+    } catch(e) {
+      console.warn('Firebase withdraw sync note:', e.message);
+    }
+  }
+
+  closeWithdrawModal();
+  document.getElementById('withdraw-input-amount').value = '';
+  document.getElementById('withdraw-input-account').value = '';
+
+  showToast(currentLang === 'bn' ? 'উত্তোলন অনুরোধ সফল হয়েছে! অ্যাডমিন অনুমোদন করবেন।' : 'Withdrawal request submitted! Pending admin payout.', 'success');
+  updateUserUI();
+}
+
+// PACKAGE DETAILS & PURCHASE
+function openPackageModal(packageId) {
+  const pkg = PACKAGES_DATA.find(p => p.id === packageId);
+  if (!pkg) return;
+  selectedPackageForModal = pkg;
+
+  const content = document.getElementById('modal-package-content');
+  const t = I18N[currentLang] || I18N.en;
+  const displayName = currentLang === 'bn' ? pkg.nameBn : pkg.name;
+
+  content.innerHTML = `
+    <div class="rounded-2xl p-4 bg-gradient-to-r ${pkg.imageColor} text-white flex items-center justify-between shadow-md">
+      <div>
+        <span class="text-xs font-black uppercase opacity-90">${pkg.category}</span>
+        <h4 class="text-lg font-black">${displayName}</h4>
+        <span class="text-xs bg-white/20 px-2 py-0.5 rounded-full font-bold mt-1 inline-block">VIP ${pkg.vipReqLevel}</span>
+      </div>
+      <div class="text-5xl">${pkg.imageIcon}</div>
+    </div>
+
+    <!-- Financial Breakdown Table -->
+    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100 space-y-2 text-xs">
+      <div class="flex justify-between py-1 border-b border-slate-200">
+        <span class="text-slate-500 font-bold">${t.priceLabel}:</span>
+        <span class="font-black text-purple-700 text-sm">${fmt(pkg.priceBDT)}</span>
+      </div>
+      <div class="flex justify-between py-1 border-b border-slate-200">
+        <span class="text-slate-500 font-bold">${t.dailyLabel}:</span>
+        <span class="font-black text-emerald-600">+${fmt(pkg.dailyReturnBDT)} / day</span>
+      </div>
+      <div class="flex justify-between py-1 border-b border-slate-200">
+        <span class="text-slate-500 font-bold">${t.cycleLabel}:</span>
+        <span class="font-black text-blue-600">${pkg.cycleDays} days</span>
+      </div>
+      <div class="flex justify-between py-1">
+        <span class="text-slate-500 font-bold">${t.totalReturnLabel}:</span>
+        <span class="font-black text-amber-600 text-sm">${fmt(pkg.totalReturnBDT)}</span>
+      </div>
+    </div>
+
+    <!-- Recharge Wallet Balance Check -->
+    <div class="bg-purple-50 rounded-2xl p-3.5 border border-purple-100 flex items-center justify-between text-xs">
+      <div>
+        <span class="text-purple-800 font-bold block">${t.walletRecharge} Balance:</span>
+        <span class="text-base font-black text-purple-700">${fmt(currentUserData?.rechargeWallet || 0)}</span>
+      </div>
+      ${(currentUserData?.rechargeWallet || 0) < pkg.priceBDT ? `
+        <button onclick="closePackageModal(); openRechargeModal();" class="bg-purple-600 text-white font-bold px-3 py-1.5 rounded-xl shadow-xs">
+          + Recharge
+        </button>
+      ` : `
+        <span class="text-emerald-600 font-bold bg-emerald-100 px-2.5 py-1 rounded-full">✓ Sufficient</span>
+      `}
+    </div>
+
+    <div class="text-[10px] text-slate-400">
+      ${t.riskBody}
+    </div>
+  `;
+
+  document.getElementById('modal-package-details').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function closePackageModal() {
+  document.getElementById('modal-package-details').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+  selectedPackageForModal = null;
+}
+
+async function executePackagePurchase() {
+  if (!selectedPackageForModal || !currentUserData) return;
+  const pkg = selectedPackageForModal;
+
+  if ((currentUserData.rechargeWallet || 0) < pkg.priceBDT) {
+    showToast(currentLang === 'bn' ? 'রিচার্জ ওয়ালেটে পর্যাপ্ত ব্যালেন্স নেই। রিচার্জ করুন।' : 'Insufficient Recharge Wallet balance. Please recharge first.', 'error');
+    return;
+  }
+
+  // Deduct from recharge wallet, increase active invest
+  currentUserData.rechargeWallet -= pkg.priceBDT;
+  currentUserData.activeInvest += pkg.priceBDT;
+  if (pkg.vipReqLevel > (currentUserData.activeVipLevel || 0)) {
+    currentUserData.activeVipLevel = pkg.vipReqLevel;
+  }
+
+  const investDoc = {
+    id: 'inv_' + Date.now(),
+    userId: currentUser.uid,
+    packageId: pkg.id,
+    packageName: pkg.name,
+    amountBDT: pkg.priceBDT,
+    dailyReturnBDT: pkg.dailyReturnBDT,
+    cycleDays: pkg.cycleDays,
+    totalReturnBDT: pkg.totalReturnBDT,
+    purchasedAt: new Date().toISOString(),
+    status: 'active'
+  };
+
+  const localDB = getLocalDB();
+  const uIdx = localDB.users.findIndex(u => u.uid === currentUser.uid);
+  if (uIdx !== -1) {
+    localDB.users[uIdx].rechargeWallet = currentUserData.rechargeWallet;
+    localDB.users[uIdx].activeInvest = currentUserData.activeInvest;
+    localDB.users[uIdx].activeVipLevel = currentUserData.activeVipLevel;
+  }
+  localDB.investments.push(investDoc);
+  localDB.transactions.push({
+    id: 'tx_' + Date.now(),
+    userId: currentUser.uid,
+    type: 'investment',
+    title: `Activated ${pkg.name}`,
+    amountBDT: -pkg.priceBDT,
+    status: 'completed',
+    date: new Date().toISOString()
+  });
+
+  // Calculate and distribute multi-tier referrer commission atomically
+  if (currentUserData.referredBy) {
+    const refUser = localDB.users.find(u => u.referralCode === currentUserData.referredBy);
+    if (refUser) {
+      const commA = pkg.priceBDT * 0.10; // 10% Level A
+      refUser.balanceWallet = (refUser.balanceWallet || 0) + commA;
+      refUser.teamIncome = (refUser.teamIncome || 0) + commA;
+      localDB.commissionRecords.push({
+        id: 'comm_' + Date.now(),
+        userId: refUser.uid,
+        fromUser: currentUser.phone,
+        level: 'A',
+        percent: 10,
+        amountBDT: commA,
+        date: new Date().toISOString()
+      });
+    }
+  }
+
+  saveLocalDB(localDB);
+
+  // Sync with Firestore
+  if (isFirebaseConnected && db) {
+    try {
+      await db.collection('investments').doc(investDoc.id).set(investDoc);
+      await db.collection('users').doc(currentUser.uid).update({
+        rechargeWallet: currentUserData.rechargeWallet,
+        activeInvest: currentUserData.activeInvest,
+        activeVipLevel: currentUserData.activeVipLevel
+      });
+    } catch(e) {
+      console.warn('Firebase invest sync note:', e.message);
+    }
+  }
+
+  closePackageModal();
+  showToast(currentLang === 'bn' ? `প্যাকেজ ${pkg.name} সফলভাবে সক্রিয় হয়েছে!` : `Package ${pkg.name} activated successfully!`, 'success');
+  updateUserUI();
+}
+
+// ==================== TRANSACTION HISTORY RENDERING ====================
+function renderRecentTransactions() {
+  const container = document.getElementById('me-recent-transactions-list');
+  if (!container) return;
+
+  const localDB = getLocalDB();
+  const userTxs = localDB.transactions.filter(t => t.userId === currentUser?.uid).slice(-3).reverse();
+
+  if (userTxs.length === 0) {
+    container.innerHTML = `<div class="text-center py-3 text-xs text-slate-400">No transaction records yet</div>`;
+    return;
+  }
+
+  container.innerHTML = userTxs.map(tx => {
+    const isCredit = tx.amountBDT > 0;
+    const badgeColor = tx.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : tx.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
+    return `
+      <div class="flex items-center justify-between py-2 border-b border-slate-100 last:border-0 text-xs">
+        <div>
+          <span class="font-bold text-slate-800 block">${tx.title}</span>
+          <span class="text-[10px] text-slate-400">${new Date(tx.date).toLocaleDateString()}</span>
+        </div>
+        <div class="text-right">
+          <span class="font-black ${isCredit ? 'text-emerald-600' : 'text-slate-800'} block">
+            ${isCredit ? '+' : ''}${fmt(Math.abs(tx.amountBDT))}
+          </span>
+          <span class="text-[9px] font-black px-1.5 py-0.5 rounded ${badgeColor} uppercase">${tx.status}</span>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openTxHistoryModal() {
+  document.getElementById('modal-tx-history').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  filterTxLog('all');
+}
+
+function closeTxHistoryModal() {
+  document.getElementById('modal-tx-history').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function filterTxLog(type) {
+  document.querySelectorAll('.tx-filter-btn').forEach(btn => {
+    if (btn.dataset.type === type) {
+      btn.className = 'tx-filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-purple-600 text-white';
+    } else {
+      btn.className = 'tx-filter-btn px-3 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600';
+    }
+  });
+
+  const list = document.getElementById('modal-all-tx-list');
+  const localDB = getLocalDB();
+  let txs = localDB.transactions.filter(t => t.userId === currentUser?.uid).reverse();
+  if (type !== 'all') {
+    txs = txs.filter(t => t.type === type);
+  }
+
+  if (txs.length === 0) {
+    list.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No records found</div>`;
+    return;
+  }
+
+  list.innerHTML = txs.map(tx => `
+    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-100 flex items-center justify-between text-xs">
+      <div>
+        <span class="font-bold text-slate-800 block">${tx.title}</span>
+        <span class="text-[10px] text-slate-400">${new Date(tx.date).toLocaleString()}</span>
+      </div>
+      <div class="text-right">
+        <span class="font-black block">${fmt(Math.abs(tx.amountBDT))}</span>
+        <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded ${tx.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">${tx.status}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ==================== DAILY COMMISSION MODAL ====================
+function openDailyCommissionModal() {
+  document.getElementById('modal-daily-comm').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+
+  const localDB = getLocalDB();
+  const comms = localDB.commissionRecords.filter(c => c.userId === currentUser?.uid) || [];
+  const list = document.getElementById('modal-daily-comm-list');
+  let total = 0;
+
+  if (comms.length === 0) {
+    list.innerHTML = `<div class="text-center py-6 text-xs text-slate-400">No verified commission records yet. Invite members to start earning!</div>`;
+  } else {
+    list.innerHTML = comms.map(c => {
+      total += c.amountBDT;
+      return `
+        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center text-xs">
+          <div>
+            <div class="font-bold text-slate-800">Tier ${c.level} Commission (${c.percent}%)</div>
+            <div class="text-[10px] text-slate-400">From member ${c.fromUser}</div>
+          </div>
+          <span class="font-black text-emerald-600 text-sm">+${fmt(c.amountBDT)}</span>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('modal-comm-total-sum').textContent = fmt(total);
+}
+
+function closeDailyCommissionModal() {
+  document.getElementById('modal-daily-comm').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function viewTierDetails(tier) {
+  openDailyCommissionModal();
+}
+
+// ==================== SPIN & WIN WHEEL ====================
+function openSpinModal() {
+  document.getElementById('modal-spin').classList.remove('hidden');
+}
+
+function closeSpinModal() {
+  document.getElementById('modal-spin').classList.add('hidden');
+}
+
+function spinTheWheel() {
+  const wheel = document.getElementById('wheel-disc');
+  const btn = document.getElementById('btn-spin-wheel');
+  btn.disabled = true;
+
+  const randomDeg = 1440 + Math.floor(Math.random() * 360);
+  wheel.style.transform = `rotate(${randomDeg}deg)`;
+
+  setTimeout(() => {
+    btn.disabled = false;
+    const rewardBDT = (Math.random() * 5 + 1).toFixed(2);
+    if (currentUserData) {
+      currentUserData.balanceWallet = (currentUserData.balanceWallet || 0) + parseFloat(rewardBDT);
+      updateUserUI();
+    }
+    showToast(currentLang === 'bn' ? `অভিনন্দন! আপনি ৳${rewardBDT} পুরস্কার জিতেছেন!` : `Congratulations! You won ${fmt(rewardBDT)} from Spin & Win!`, 'success');
+    closeSpinModal();
+  }, 3200);
+}
+
+// ==================== FORGOT PASSWORD ====================
+function openForgotPasswordModal() {
+  document.getElementById('modal-forgot-pass').classList.remove('hidden');
+}
+
+function closeForgotPasswordModal() {
+  document.getElementById('modal-forgot-pass').classList.add('hidden');
+}
+
+function submitPasswordRecovery() {
+  const phone = document.getElementById('forgot-input-phone').value.trim();
+  const newPass = document.getElementById('forgot-input-newpass').value;
+
+  if (!phone || !newPass || newPass.length < 6) {
+    showToast('Please enter your phone and new password (min 6 chars)', 'error');
+    return;
+  }
+
+  const normalizedPhone = phone.startsWith('+880') ? phone : '+880' + phone.replace(/^0/, '');
+  const localDB = getLocalDB();
+  const u = localDB.users.find(u => u.phone === normalizedPhone);
+  if (!u) {
+    showToast('No account found with this phone number', 'error');
+    return;
+  }
+
+  u.password = newPass;
+  saveLocalDB(localDB);
+  closeForgotPasswordModal();
+  showToast('Password reset successful! Please login with your new password.', 'success');
+}
+
+// ==================== ANNOUNCEMENT & OTHER UTILS ====================
+function openNoticeModal() {
+  document.getElementById('modal-notice').classList.remove('hidden');
+}
+
+function closeNoticeModal() {
+  document.getElementById('modal-notice').classList.add('hidden');
+}
+
+function closeAllModals() {
+  closeRechargeModal();
+  closeWithdrawModal();
+  closePackageModal();
+  closeDailyCommissionModal();
+  closeTxHistoryModal();
+  closeSpinModal();
+  closeForgotPasswordModal();
+  closeNoticeModal();
+  closeMyProductsModal();
+  closeDownloadAppModal();
+  closeSupportModal();
+  closeAgentSalaryModal();
+}
+
+// ==================== MY PRODUCTS & DAILY YIELD ====================
+function openMyProductsModal() {
+  document.getElementById('modal-my-products').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  renderMyProducts();
+}
+
+function closeMyProductsModal() {
+  document.getElementById('modal-my-products').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function renderMyProducts() {
+  const container = document.getElementById('my-products-list-container');
+  if (!container) return;
+
+  const localDB = getLocalDB();
+  const myInvestments = localDB.investments.filter(inv => inv.userId === currentUser?.uid);
+  let totalInvest = 0;
+  let totalDaily = 0;
+
+  myInvestments.forEach(inv => {
+    if (inv.status === 'active') {
+      totalInvest += Number(inv.amountBDT || 0);
+      totalDaily += Number(inv.dailyReturnBDT || 0);
+    }
+  });
+
+  document.getElementById('m-myprod-invest-val').textContent = fmt(totalInvest);
+  document.getElementById('m-myprod-daily-val').textContent = '+' + fmt(totalDaily);
+
+  if (myInvestments.length === 0) {
+    container.innerHTML = `
+      <div class="bg-slate-50 rounded-2xl p-6 text-center text-xs text-slate-400 border border-slate-100">
+        <div class="text-3xl mb-1.5">📦</div>
+        <div class="font-bold text-slate-600 mb-1">No Active Products Yet</div>
+        <div>Explore our Fixed Yields or Limited Offers packages to start generating daily returns!</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = myInvestments.map(inv => {
+    const isCollectedToday = inv.lastCollectedDate === new Date().toISOString().slice(0, 10);
+    return `
+      <div class="bg-slate-50 rounded-2xl p-3.5 border border-slate-100 space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="text-base">🌾</span>
+            <span class="font-black text-slate-800">${inv.packageName}</span>
+          </div>
+          <span class="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">
+            ${inv.status}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-1.5 bg-white p-2 rounded-xl text-center border border-slate-100">
+          <div>
+            <span class="text-[9px] text-slate-400 block font-bold">Invested</span>
+            <span class="font-black text-purple-700">${fmt(inv.amountBDT)}</span>
+          </div>
+          <div class="border-x border-slate-100">
+            <span class="text-[9px] text-slate-400 block font-bold">Daily Yield</span>
+            <span class="font-black text-emerald-600">+${fmt(inv.dailyReturnBDT)}</span>
+          </div>
+          <div>
+            <span class="text-[9px] text-slate-400 block font-bold">Cycle</span>
+            <span class="font-black text-blue-600">${inv.cycleDays} days</span>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <span class="text-[10px] text-slate-400">Purchased: ${new Date(inv.purchasedAt).toLocaleDateString()}</span>
+          ${isCollectedToday ? `
+            <span class="text-slate-400 font-bold text-[10px] bg-slate-200 px-3 py-1 rounded-xl">✓ Collected Today</span>
+          ` : `
+            <button onclick="collectDailyYield('${inv.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] px-3.5 py-1.5 rounded-xl shadow-xs transition-colors flex items-center gap-1">
+              <span>⚡ Collect Return</span>
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function collectDailyYield(invId) {
+  const localDB = getLocalDB();
+  const inv = localDB.investments.find(i => i.id === invId);
+  if (!inv) return;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  if (inv.lastCollectedDate === todayStr) {
+    showToast('Daily yield already collected today. Come back tomorrow!', 'info');
+    return;
+  }
+
+  inv.lastCollectedDate = todayStr;
+  const yieldAmount = Number(inv.dailyReturnBDT || 0);
+
+  if (currentUserData) {
+    currentUserData.balanceWallet = (currentUserData.balanceWallet || 0) + yieldAmount;
+    currentUserData.profitEarned = (currentUserData.profitEarned || 0) + yieldAmount;
+    currentUserData.incomeToday = yieldAmount;
+  }
+
+  const uIdx = localDB.users.findIndex(u => u.uid === currentUser?.uid);
+  if (uIdx !== -1) {
+    localDB.users[uIdx].balanceWallet = currentUserData.balanceWallet;
+    localDB.users[uIdx].profitEarned = currentUserData.profitEarned;
+    localDB.users[uIdx].incomeToday = currentUserData.incomeToday;
+  }
+
+  localDB.transactions.push({
+    id: 'tx_' + Date.now(),
+    userId: currentUser.uid,
+    type: 'yield',
+    title: `Daily Return from ${inv.packageName}`,
+    amountBDT: yieldAmount,
+    status: 'completed',
+    date: new Date().toISOString()
+  });
+
+  saveLocalDB(localDB);
+
+  showToast(currentLang === 'bn' ? `দৈনিক লাভ +${fmt(yieldAmount)} ব্যালেন্স ওয়ালেটে যোগ হয়েছে!` : `Daily yield +${fmt(yieldAmount)} added to Balance Wallet!`, 'success');
+  updateUserUI();
+  renderMyProducts();
+}
+
+// ==================== DOWNLOAD APP MODAL ====================
+function downloadAppPrompt() {
+  document.getElementById('modal-download-app').classList.remove('hidden');
+}
+
+function closeDownloadAppModal() {
+  document.getElementById('modal-download-app').classList.add('hidden');
+  const box = document.getElementById('download-progress-box');
+  const bar = document.getElementById('dl-progress-bar');
+  const btn = document.getElementById('btn-start-download');
+  if (box) box.classList.add('hidden');
+  if (bar) bar.style.width = '0%';
+  if (btn) btn.disabled = false;
+}
+
+function startAppDownload() {
+  const box = document.getElementById('download-progress-box');
+  const bar = document.getElementById('dl-progress-bar');
+  const percent = document.getElementById('dl-progress-percent');
+  const btn = document.getElementById('btn-start-download');
+
+  box.classList.remove('hidden');
+  btn.disabled = true;
+
+  let progress = 0;
+  const interval = setInterval(() => {
+    progress += Math.floor(Math.random() * 25) + 15;
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(interval);
+      bar.style.width = '100%';
+      percent.textContent = '100%';
+      setTimeout(() => {
+        showToast('EasyEarn-v2.4.1.apk downloaded! Check your downloads.', 'success');
+        closeDownloadAppModal();
+      }, 500);
+    } else {
+      bar.style.width = progress + '%';
+      percent.textContent = progress + '%';
+    }
+  }, 250);
+}
+
+// ==================== ONLINE SUPPORT MODAL ====================
+function openSupportModal() {
+  document.getElementById('modal-online-support').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+}
+
+function closeSupportModal() {
+  document.getElementById('modal-online-support').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+// ==================== AGENT SALARY MODAL ====================
+function openAgentSalaryModal() {
+  document.getElementById('modal-agent-salary').classList.remove('hidden');
+  document.getElementById('modal-overlay').classList.remove('hidden');
+  const activeRefs = currentUserData?.activeReferrals || 0;
+  const countEl = document.getElementById('m-salary-active-count');
+  if (countEl) countEl.textContent = `${activeRefs} / 30 Active Team Members`;
+}
+
+function closeAgentSalaryModal() {
+  document.getElementById('modal-agent-salary').classList.add('hidden');
+  document.getElementById('modal-overlay').classList.add('hidden');
+}
+
+function claimAgentSalary() {
+  const activeRefs = currentUserData?.activeReferrals || 0;
+  if (activeRefs < 10) {
+    showToast(currentLang === 'bn' ? `ন্যূনতম ১০ জন সক্রিয় রেফারাল প্রয়োজন। আপনার আছে: ${activeRefs} জন` : `Minimum 10 active referrals required. You currently have: ${activeRefs}`, 'info');
+  } else {
+    showToast(currentLang === 'bn' ? 'আপনার আবেদন পর্যালোচনার জন্য জমা হয়েছে! অ্যাডমিন শীঘ্রই যাচাই করবেন।' : 'Application submitted for admin review! Verification in progress.', 'success');
+    closeAgentSalaryModal();
+  }
+}
+
+// ==================== CAROUSEL AUTOPLAY ====================
+let carouselIdx = 0;
+let carouselTimer = null;
+
+function scrollToSlide(idx) {
+  carouselIdx = idx;
+  const container = document.getElementById('home-carousel-container');
+  if (!container) return;
+  const slideWidth = container.clientWidth;
+  container.scrollTo({ left: slideWidth * idx, behavior: 'smooth' });
+
+  document.querySelectorAll('.carousel-dot').forEach((dot, i) => {
+    if (i === idx) {
+      dot.className = 'carousel-dot w-5 h-1.5 rounded-full bg-purple-500 transition-all';
+    } else {
+      dot.className = 'carousel-dot w-2 h-1.5 rounded-full bg-white/50 transition-all';
+    }
+  });
+}
+
+function startCarouselTimer() {
+  if (carouselTimer) clearInterval(carouselTimer);
+  carouselTimer = setInterval(() => {
+    carouselIdx = (carouselIdx + 1) % 3;
+    scrollToSlide(carouselIdx);
+  }, 4500);
+}
+
+// ==================== INITIALIZATION ====================
+window.addEventListener('DOMContentLoaded', () => {
+  // Capture referral code from URL parameter (?ref=...)
+  const urlParams = new URLSearchParams(window.location.search);
+  const refParam = urlParams.get('ref');
+  if (refParam) {
+    const regRefInput = document.getElementById('reg-referral');
+    if (regRefInput) regRefInput.value = refParam;
+  }
+
+  generateCaptcha('login');
+  applyTranslations();
+
+  // Check saved session
+  const activeUid = localStorage.getItem('ee_active_uid');
+  if (activeUid) {
+    const localDB = getLocalDB();
+    const found = localDB.users.find(u => u.uid === activeUid);
+    if (found) {
+      currentUser = found;
+      currentUserData = found;
+      enterMainApp();
+      return;
+    }
+  }
+
+  // If no saved user session, ensure auth screen is visible
+  document.getElementById('auth-screen').classList.remove('hidden');
+});
+</script>
+</body>
+</html>

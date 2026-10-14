@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin'
+      );
+    }
+
+    // ================= USERS COLLECTION =================
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // User can create their initial profile upon registration
+      allow create: if isAuthenticated() && request.auth.uid == userId
+        && request.resource.data.role == 'user'
+        && request.resource.data.rechargeWallet == 0
+        && request.resource.data.status == 'active';
+
+      // Updates must not alter sensitive balances or administrative roles directly from client
+      allow update: if isAdmin() || (
+        isOwner(userId)
+        && !request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['role', 'rechargeWallet', 'balanceWallet', 'activeVipLevel', 'status', 'totalDeposit'])
+      );
+
+      allow delete: if isAdmin();
+    }
+
+    // ================= PACKAGES COLLECTION =================
+    match /packages/{packageId} {
+      allow read: if true; // Publicly readable for visitors & users
+      allow write: if isAdmin();
+    }
+
+    // ================= DEPOSITS COLLECTION =================
+    match /deposits/{depositId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      
+      // Clients can create pending deposits only
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.amount > 0;
+
+      // Status approval or rejection is restricted to Admin
+      allow update, delete: if isAdmin();
+    }
+
+    // ================= WITHDRAWALS COLLECTION =================
+    match /withdrawals/{withdrawalId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      
+      // Clients can create pending withdrawals only
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'pending'
+        && request.resource.data.amount >= 100;
+
+      allow update, delete: if isAdmin();
+    }
+
+    // ================= INVESTMENTS COLLECTION =================
+    match /investments/{investmentId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      // Investments must be processed via Cloud Function or Admin
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ================= TRANSACTIONS COLLECTION =================
+    match /transactions/{transactionId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ================= TEAMS & COMMISSIONS =================
+    match /teams/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /commissionRecords/{recordId} {
+      allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ================= SETTINGS =================
+    match /settings/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ================= AUDIT LOGS =================
+    match /auditLogs/{logId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

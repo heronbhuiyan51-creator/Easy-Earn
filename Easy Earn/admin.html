@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Easy Earn — Administrator Control Console</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Firebase Compat/Modular SDK v10 -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          admin: {
+            purple: '#6d28d9',
+            dark: '#0f172a',
+            surface: '#1e293b'
+          }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #f8fafc;
+  }
+  .gradient-header {
+    background: linear-gradient(135deg, #1e1b4b 0%, #312e81 40%, #4338ca 100%);
+  }
+  .gradient-btn {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  }
+  .card-shadow {
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+  }
+  .tab-btn.active {
+    background-color: #4f46e5;
+    color: white;
+    font-weight: 700;
+  }
+  .slide-in {
+    animation: slideIn 0.25s ease-out;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container" class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+<!-- ======================== ADMIN LOGIN VIEW ======================== -->
+<div id="admin-login-screen" class="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+  <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+    <!-- Top accent glow -->
+    <div class="absolute -top-10 -right-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
+
+    <div class="text-center mb-6">
+      <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-900 to-purple-600 flex items-center justify-center text-white text-3xl mx-auto mb-3 shadow-lg">
+        🔐
+      </div>
+      <h1 class="text-2xl font-black text-slate-900 tracking-tight">Easy Earn Admin</h1>
+      <p class="text-xs text-slate-500 font-medium mt-1">Authorized Management & Financial Console</p>
+    </div>
+
+    <!-- Demo Credentials Notice -->
+    <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-3 text-xs text-indigo-900 mb-5 leading-relaxed">
+      <div class="font-bold flex items-center gap-1 mb-1">
+        <span>ℹ️</span> <span>Default Administrator Credentials:</span>
+      </div>
+      <div>• Phone: <b class="font-mono">01700000000</b></div>
+      <div>• Password: <b class="font-mono">admin123</b></div>
+    </div>
+
+    <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Admin Mobile Number</label>
+        <div class="flex rounded-2xl border border-slate-200 overflow-hidden focus-within:border-indigo-500">
+          <span class="bg-slate-100 px-3 py-3 text-xs font-bold text-slate-700 flex items-center border-r border-slate-200">+880</span>
+          <input type="tel" id="admin-phone-input" value="01700000000" class="flex-1 px-3 py-3 text-sm outline-none font-medium text-slate-800" placeholder="01XXXXXXXXX">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Master Password</label>
+        <input type="password" id="admin-pass-input" value="admin123" class="w-full px-4 py-3 rounded-2xl border border-slate-200 outline-none text-sm font-medium focus:border-indigo-500" placeholder="Enter admin password">
+      </div>
+
+      <button type="submit" id="btn-admin-login" class="w-full gradient-btn text-white py-3.5 rounded-2xl font-black text-sm shadow-lg hover:opacity-95 transition-opacity mt-2">
+        Authenticate & Open Console →
+      </button>
+
+      <div class="text-center pt-2">
+        <a href="index.html" class="text-xs font-bold text-indigo-600 hover:text-indigo-800">
+          ← Return to User Application
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ======================== ADMIN DASHBOARD ======================== -->
+<div id="admin-dashboard-screen" class="min-h-screen flex flex-col hidden bg-slate-50">
+  
+  <!-- Top Navigation Header -->
+  <header class="gradient-header text-white px-4 py-3 sticky top-0 z-30 shadow-md">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg font-black">
+          ⚡
+        </div>
+        <div>
+          <div class="font-black text-base tracking-tight leading-tight flex items-center gap-2">
+            <span>Easy Earn</span>
+            <span class="text-[10px] bg-emerald-500 text-white font-extrabold px-1.5 py-0.5 rounded">ADMIN v2.0</span>
+          </div>
+          <span class="text-[11px] text-indigo-200 font-medium">Financial & User Authority</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <a href="index.html" target="_blank" class="bg-white/10 hover:bg-white/20 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1">
+          <span>📱</span> <span>User Portal</span>
+        </a>
+        <button onclick="handleAdminLogout()" class="bg-rose-600/80 hover:bg-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-colors">
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto w-full p-4 flex-1 space-y-6">
+
+    <!-- KPI / STATS CARDS ROW -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <!-- Users -->
+      <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100">
+        <span class="text-[11px] font-bold text-slate-400 block">Total Registered Users</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span class="text-2xl font-black text-slate-800" id="stat-total-users">0</span>
+          <span class="text-xs font-black text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-lg">Accounts</span>
+        </div>
+      </div>
+
+      <!-- Pending Deposits -->
+      <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100">
+        <span class="text-[11px] font-bold text-slate-400 block">Pending Deposits</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span class="text-2xl font-black text-amber-500" id="stat-pending-deposits">0</span>
+          <button onclick="switchTab('deposits', 'pending')" class="text-xs font-bold text-amber-600 hover:underline">Review →</button>
+        </div>
+      </div>
+
+      <!-- Pending Withdrawals -->
+      <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100">
+        <span class="text-[11px] font-bold text-slate-400 block">Pending Withdrawals</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span class="text-2xl font-black text-rose-500" id="stat-pending-withdrawals">0</span>
+          <button onclick="switchTab('withdrawals', 'pending')" class="text-xs font-bold text-rose-600 hover:underline">Review →</button>
+        </div>
+      </div>
+
+      <!-- System Turnover / Approved Deposits -->
+      <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100">
+        <span class="text-[11px] font-bold text-slate-400 block">Approved Volume</span>
+        <div class="flex items-baseline justify-between mt-1">
+          <span class="text-2xl font-black text-emerald-600" id="stat-total-volume">৳0.00</span>
+          <span class="text-xs font-bold text-slate-400">Total</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN TABS NAVIGATION -->
+    <div class="flex gap-2 overflow-x-auto pb-1 border-b border-slate-200">
+      <button onclick="switchTab('users')" id="tab-btn-users" class="tab-btn active px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors">
+        👥 Users Management
+      </button>
+      <button onclick="switchTab('deposits')" id="tab-btn-deposits" class="tab-btn bg-white text-slate-600 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors border border-slate-200">
+        ⚡ Deposits (<span id="tab-badge-dep-count">0</span>)
+      </button>
+      <button onclick="switchTab('withdrawals')" id="tab-btn-withdrawals" class="tab-btn bg-white text-slate-600 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors border border-slate-200">
+        💸 Withdrawals (<span id="tab-badge-wd-count">0</span>)
+      </button>
+      <button onclick="switchTab('packages')" id="tab-btn-packages" class="tab-btn bg-white text-slate-600 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors border border-slate-200">
+        📦 Packages
+      </button>
+      <button onclick="switchTab('investments')" id="tab-btn-investments" class="tab-btn bg-white text-slate-600 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors border border-slate-200">
+        🌾 Investments (<span id="tab-badge-inv-count">0</span>)
+      </button>
+      <button onclick="switchTab('settings')" id="tab-btn-settings" class="tab-btn bg-white text-slate-600 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors border border-slate-200">
+        ⚙ System Settings
+      </button>
+      <button onclick="switchTab('audits')" id="tab-btn-audits" class="tab-btn bg-white text-slate-600 px-4 py-2.5 rounded-2xl text-xs font-bold transition-colors border border-slate-200">
+        📜 Audit Logs
+      </button>
+    </div>
+
+    <!-- ==================== TAB 1: USERS MANAGEMENT ==================== -->
+    <section id="pane-users" class="tab-pane space-y-4">
+      <!-- Search Bar -->
+      <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100 flex gap-2">
+        <input type="tel" id="user-search-query" placeholder="Search by phone number (e.g. 01811754943)" class="flex-1 px-4 py-2.5 rounded-2xl border border-slate-200 text-sm outline-none focus:border-indigo-500 font-medium">
+        <button onclick="searchUsers()" class="gradient-btn text-white px-5 py-2.5 rounded-2xl text-xs font-black shadow-sm">
+          Search
+        </button>
+        <button onclick="resetUserSearch()" class="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-2xl text-xs font-bold">
+          Clear
+        </button>
+      </div>
+
+      <!-- Users Table / Cards -->
+      <div id="users-table-container" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: DEPOSITS MANAGEMENT ==================== -->
+    <section id="pane-deposits" class="tab-pane space-y-4 hidden">
+      <!-- Filter Sub-tabs -->
+      <div class="flex gap-2">
+        <button onclick="filterDeposits('pending')" class="dep-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-amber-500 text-white" data-status="pending">Pending</button>
+        <button onclick="filterDeposits('approved')" class="dep-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600" data-status="approved">Approved</button>
+        <button onclick="filterDeposits('rejected')" class="dep-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600" data-status="rejected">Rejected</button>
+      </div>
+
+      <div id="deposits-list-container" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: WITHDRAWALS MANAGEMENT ==================== -->
+    <section id="pane-withdrawals" class="tab-pane space-y-4 hidden">
+      <!-- Filter Sub-tabs -->
+      <div class="flex gap-2">
+        <button onclick="filterWithdrawals('pending')" class="wd-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-rose-500 text-white" data-status="pending">Pending</button>
+        <button onclick="filterWithdrawals('approved')" class="wd-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600" data-status="approved">Approved</button>
+        <button onclick="filterWithdrawals('rejected')" class="wd-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600" data-status="rejected">Rejected</button>
+      </div>
+
+      <div id="withdrawals-list-container" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: PACKAGES MANAGEMENT ==================== -->
+    <section id="pane-packages" class="tab-pane space-y-4 hidden">
+      <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100">
+        <h3 class="font-black text-sm text-slate-800 mb-3">Add New Investment Package</h3>
+        <form onsubmit="handleAddNewPackage(event)" class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <input type="text" id="new-pkg-name" required placeholder="Package Name (e.g. Hope rices 3)" class="px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none font-medium">
+          <input type="number" id="new-pkg-price" required step="1" placeholder="Price (৳ BDT)" class="px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none font-medium">
+          <input type="number" id="new-pkg-daily" required step="0.01" placeholder="Daily Return (৳ BDT)" class="px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none font-medium">
+          <input type="number" id="new-pkg-cycle" required step="1" placeholder="Cycle (Days)" class="px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none font-medium">
+          <select id="new-pkg-category" class="px-3 py-2 rounded-xl border border-slate-200 text-xs outline-none font-medium bg-white">
+            <option value="Fixed Yields">Fixed Yields</option>
+            <option value="Flexible Rates">Flexible Rates</option>
+            <option value="Limited Offers">Limited Offers</option>
+          </select>
+          <button type="submit" class="gradient-btn text-white py-2 rounded-xl text-xs font-black shadow-sm">
+            + Add Package
+          </button>
+        </form>
+      </div>
+
+      <div id="admin-packages-list" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB: INVESTMENTS MANAGEMENT ==================== -->
+    <section id="pane-investments" class="tab-pane space-y-4 hidden">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100">
+          <span class="text-[11px] font-bold text-slate-400 block">Total Active Investments</span>
+          <span class="text-2xl font-black text-purple-700 mt-1 block" id="stat-inv-count">0</span>
+        </div>
+        <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100">
+          <span class="text-[11px] font-bold text-slate-400 block">Total Active Capital</span>
+          <span class="text-2xl font-black text-emerald-600 mt-1 block" id="stat-inv-capital">৳0.00</span>
+        </div>
+      </div>
+
+      <div id="admin-investments-list" class="space-y-3">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: SYSTEM SETTINGS ==================== -->
+    <section id="pane-settings" class="tab-pane space-y-4 hidden">
+      <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100 space-y-4 max-w-xl">
+        <h3 class="font-black text-sm text-slate-800">Financial & Rate Configuration</h3>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">USD to BDT Exchange Rate (1 USD = X ৳)</label>
+          <input type="number" id="setting-rate" value="120" step="0.5" class="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm outline-none font-bold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Deposit Payment Numbers (bKash, Nagad, Rocket)</label>
+          <input type="text" id="setting-deposit-phone" value="01811754943" class="w-full px-4 py-2.5 rounded-2xl border border-slate-200 text-sm outline-none font-mono">
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Level A Comm (%)</label>
+            <input type="number" id="setting-comm-a" value="10" step="0.5" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Level B Comm (%)</label>
+            <input type="number" id="setting-comm-b" value="5" step="0.5" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Level C Comm (%)</label>
+            <input type="number" id="setting-comm-c" value="2" step="0.5" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold">
+          </div>
+        </div>
+
+        <button onclick="saveAdminSettings()" class="w-full gradient-btn text-white py-3 rounded-2xl font-black text-xs shadow-md">
+          Save Settings & Broadcast
+        </button>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 6: AUDIT LOGS ==================== -->
+    <section id="pane-audits" class="tab-pane space-y-3 hidden">
+      <div class="bg-white rounded-3xl p-5 card-shadow border border-slate-100">
+        <h3 class="font-black text-sm text-slate-800 mb-3">Immutable Administrative Audit Log</h3>
+        <div id="audit-logs-container" class="space-y-2 text-xs">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ======================== EDIT USER BALANCE / STATUS MODAL ======================== -->
+<div id="modal-edit-user" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs" onclick="closeEditUserModal()"></div>
+  <div class="relative bg-white rounded-3xl p-6 max-w-sm w-full card-shadow z-10 slide-in">
+    <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+      <h3 class="font-black text-base text-slate-800">Adjust User Account</h3>
+      <button onclick="closeEditUserModal()" class="w-8 h-8 rounded-full bg-slate-100 text-slate-500 font-bold">✕</button>
+    </div>
+
+    <input type="hidden" id="edit-user-uid">
+
+    <div class="space-y-3 text-xs">
+      <div>
+        <label class="block font-bold text-slate-500 mb-1">User Mobile</label>
+        <input type="text" id="edit-user-phone" readonly class="w-full px-3 py-2 bg-slate-100 rounded-xl border border-slate-200 font-mono text-slate-600">
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-600 mb-1">Recharge Wallet (৳ BDT)</label>
+        <input type="number" id="edit-user-recharge" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none font-bold text-indigo-700">
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-600 mb-1">Balance Wallet (৳ BDT)</label>
+        <input type="number" id="edit-user-balance" step="1" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none font-bold text-emerald-700">
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-600 mb-1">VIP Membership Tier</label>
+        <select id="edit-user-vip" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none font-bold bg-white">
+          <option value="0">VIP 0</option>
+          <option value="1">VIP 1</option>
+          <option value="2">VIP 2</option>
+          <option value="3">VIP 3</option>
+          <option value="4">VIP 4</option>
+          <option value="5">VIP 5</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-600 mb-1">Account Standing</label>
+        <select id="edit-user-status" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none font-bold bg-white">
+          <option value="active">Active (Normal)</option>
+          <option value="banned">Banned (Suspended)</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block font-bold text-slate-600 mb-1">Audit Reason / Note (Mandatory)</label>
+        <input type="text" id="edit-user-reason" placeholder="e.g. Approved manual bonus or verification" class="w-full px-3 py-2 rounded-xl border border-slate-200 outline-none font-medium">
+      </div>
+
+      <button onclick="saveUserAdjustments()" class="w-full gradient-btn text-white py-3 rounded-2xl font-black text-xs shadow-md mt-2">
+        Save & Commit Audit Record
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================== RECEIPT ZOOM MODAL ======================== -->
+<div id="modal-receipt-preview" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-slate-900/80 backdrop-blur-xs" onclick="closeReceiptModal()"></div>
+  <div class="relative bg-white rounded-3xl p-4 max-w-lg w-full card-shadow z-10 slide-in text-center">
+    <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+      <span class="font-black text-xs text-slate-800">Payment Slip Verification</span>
+      <button onclick="closeReceiptModal()" class="w-7 h-7 rounded-full bg-slate-100 text-slate-600 font-bold">✕</button>
+    </div>
+    <div class="max-h-[75vh] overflow-auto rounded-2xl bg-slate-100 flex items-center justify-center p-2">
+      <img id="receipt-preview-img" src="" class="max-w-full max-h-[70vh] rounded-xl object-contain shadow-sm">
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * Easy Earn Administrator Logic
+ * Coordinates Firestore and local mock database with strict audit logging
+ */
+
+let currentAdmin = null;
+let currentDepositFilter = 'pending';
+let currentWithdrawalFilter = 'pending';
+
+// Helpers
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  const bg = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-slate-800';
+  toast.className = `p-3 rounded-2xl text-white text-xs font-bold shadow-xl ${bg} slide-in pointer-events-auto`;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => { toast.remove(); }, 3000);
+}
+
+function getLocalDB() {
+  const defaultDB = {
+    users: [],
+    deposits: [],
+    withdrawals: [],
+    investments: [],
+    transactions: [],
+    commissionRecords: []
+  };
+  const stored = localStorage.getItem('ee_local_db_v2');
+  if (!stored) return defaultDB;
+  try { return JSON.parse(stored); } catch(e) { return defaultDB; }
+}
+
+function saveLocalDB(data) {
+  localStorage.setItem('ee_local_db_v2', JSON.stringify(data));
+}
+
+function getAuditLogs() {
+  const stored = localStorage.getItem('ee_audit_logs');
+  return stored ? JSON.parse(stored) : [];
+}
+
+function addAuditLog(action, details) {
+  const logs = getAuditLogs();
+  logs.unshift({
+    id: 'aud_' + Date.now(),
+    adminPhone: currentAdmin ? currentAdmin.phone : 'system',
+    action: action,
+    details: details,
+    timestamp: new Date().toISOString()
+  });
+  localStorage.setItem('ee_audit_logs', JSON.stringify(logs.slice(0, 200)));
+}
+
+// Authentication
+function handleAdminLogin(e) {
+  e.preventDefault();
+  const phone = document.getElementById('admin-phone-input').value.trim();
+  const pass = document.getElementById('admin-pass-input').value;
+
+  const normalizedPhone = phone.startsWith('+880') ? phone : '+880' + phone.replace(/^0/, '');
+  const localDB = getLocalDB();
+  const match = localDB.users.find(u => (u.phone === normalizedPhone || u.phone === phone) && u.password === pass && u.role === 'admin');
+
+  // Also support default master admin credentials
+  if (match || (phone === '01700000000' && pass === 'admin123')) {
+    currentAdmin = match || { uid: 'master_admin', phone: '+8801700000000', role: 'admin' };
+    localStorage.setItem('ee_admin_session', JSON.stringify(currentAdmin));
+    showToast('Administrator authenticated', 'success');
+    addAuditLog('LOGIN', 'Administrator logged into control console');
+    openDashboard();
+  } else {
+    showToast('Invalid administrator credentials', 'error');
+  }
+}
+
+function handleAdminLogout() {
+  addAuditLog('LOGOUT', 'Administrator logged out');
+  currentAdmin = null;
+  localStorage.removeItem('ee_admin_session');
+  document.getElementById('admin-dashboard-screen').classList.add('hidden');
+  document.getElementById('admin-login-screen').classList.remove('hidden');
+}
+
+function openDashboard() {
+  document.getElementById('admin-login-screen').classList.add('hidden');
+  document.getElementById('admin-dashboard-screen').classList.remove('hidden');
+  refreshAllData();
+}
+
+// Data Refresh
+function refreshAllData() {
+  const db = getLocalDB();
+
+  // KPIs
+  const regularUsers = db.users.filter(u => u.role !== 'admin');
+  document.getElementById('stat-total-users').textContent = regularUsers.length;
+
+  const pendingDeps = db.deposits.filter(d => d.status === 'pending');
+  document.getElementById('stat-pending-deposits').textContent = pendingDeps.length;
+  document.getElementById('tab-badge-dep-count').textContent = pendingDeps.length;
+
+  const pendingWds = db.withdrawals.filter(w => w.status === 'pending');
+  document.getElementById('stat-pending-withdrawals').textContent = pendingWds.length;
+  document.getElementById('tab-badge-wd-count').textContent = pendingWds.length;
+
+  let totalVolume = 0;
+  db.deposits.filter(d => d.status === 'approved').forEach(d => totalVolume += (d.amountBDT || 0));
+  document.getElementById('stat-total-volume').textContent = '৳' + totalVolume.toFixed(2);
+
+  // Investments count & capital
+  const allInvestments = db.investments || [];
+  const activeInvs = allInvestments.filter(i => i.status === 'active');
+  const invBadge = document.getElementById('tab-badge-inv-count');
+  if (invBadge) invBadge.textContent = activeInvs.length;
+  const statInvCount = document.getElementById('stat-inv-count');
+  if (statInvCount) statInvCount.textContent = activeInvs.length;
+  let totalCap = 0;
+  activeInvs.forEach(i => totalCap += Number(i.amountBDT || 0));
+  const statInvCap = document.getElementById('stat-inv-capital');
+  if (statInvCap) statInvCap.textContent = '৳' + totalCap.toFixed(2);
+
+  renderUsersList(regularUsers);
+  renderDeposits();
+  renderWithdrawals();
+  renderInvestments();
+  renderPackages();
+  renderAuditLogs();
+}
+
+// TAB SWITCHING
+function switchTab(tabName, subFilter = null) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.classList.add('bg-white', 'text-slate-600');
+  });
+
+  const pane = document.getElementById('pane-' + tabName);
+  if (pane) pane.classList.remove('hidden');
+
+  const btn = document.getElementById('tab-btn-' + tabName);
+  if (btn) {
+    btn.classList.add('active');
+    btn.classList.remove('bg-white', 'text-slate-600');
+  }
+
+  if (tabName === 'deposits' && subFilter) filterDeposits(subFilter);
+  if (tabName === 'withdrawals' && subFilter) filterWithdrawals(subFilter);
+}
+
+// USERS MANAGEMENT
+function renderUsersList(users) {
+  const container = document.getElementById('users-table-container');
+  if (users.length === 0) {
+    container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center text-xs text-slate-400">No registered users found</div>`;
+    return;
+  }
+
+  container.innerHTML = users.map(u => `
+    <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-base">
+          👤
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-black text-slate-800 text-sm">${u.phone}</span>
+            <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${u.status === 'banned' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
+              ${u.status || 'active'}
+            </span>
+            <span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded text-[10px]">
+              VIP ${u.activeVipLevel || 0}
+            </span>
+          </div>
+          <div class="text-slate-400 text-[11px] mt-0.5">
+            Ref Code: <b class="font-mono">${u.referralCode || 'N/A'}</b> • Joined: ${new Date(u.createdAt).toLocaleDateString()}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-100 text-center">
+        <div>
+          <span class="text-[10px] text-slate-400 block">Recharge Wallet</span>
+          <span class="font-black text-indigo-700">৳${(u.rechargeWallet || 0).toFixed(2)}</span>
+        </div>
+        <div>
+          <span class="text-[10px] text-slate-400 block">Balance Wallet</span>
+          <span class="font-black text-emerald-700">৳${(u.balanceWallet || 0).toFixed(2)}</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openEditUserModal('${u.uid}')" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 px-3 py-1.5 rounded-xl font-bold transition-colors">
+          ✏️ Edit Balances
+        </button>
+        <button onclick="toggleUserBan('${u.uid}')" class="${u.status === 'banned' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'} px-3 py-1.5 rounded-xl font-bold transition-colors">
+          ${u.status === 'banned' ? '✅ Unban' : '🚫 Ban'}
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function searchUsers() {
+  const query = document.getElementById('user-search-query').value.trim();
+  const db = getLocalDB();
+  const matches = db.users.filter(u => u.phone.includes(query) || (u.referralCode && u.referralCode.includes(query.toUpperCase())));
+  renderUsersList(matches);
+}
+
+function resetUserSearch() {
+  document.getElementById('user-search-query').value = '';
+  refreshAllData();
+}
+
+function openEditUserModal(uid) {
+  const db = getLocalDB();
+  const u = db.users.find(u => u.uid === uid);
+  if (!u) return;
+
+  document.getElementById('edit-user-uid').value = u.uid;
+  document.getElementById('edit-user-phone').value = u.phone;
+  document.getElementById('edit-user-recharge').value = (u.rechargeWallet || 0).toFixed(2);
+  document.getElementById('edit-user-balance').value = (u.balanceWallet || 0).toFixed(2);
+  document.getElementById('edit-user-vip').value = u.activeVipLevel || 0;
+  document.getElementById('edit-user-status').value = u.status || 'active';
+  document.getElementById('edit-user-reason').value = '';
+
+  document.getElementById('modal-edit-user').classList.remove('hidden');
+}
+
+function closeEditUserModal() {
+  document.getElementById('modal-edit-user').classList.add('hidden');
+}
+
+function saveUserAdjustments() {
+  const uid = document.getElementById('edit-user-uid').value;
+  const newRecharge = parseFloat(document.getElementById('edit-user-recharge').value) || 0;
+  const newBalance = parseFloat(document.getElementById('edit-user-balance').value) || 0;
+  const newVip = parseInt(document.getElementById('edit-user-vip').value) || 0;
+  const newStatus = document.getElementById('edit-user-status').value;
+  const reason = document.getElementById('edit-user-reason').value.trim();
+
+  if (!reason) {
+    showToast('Please provide an audit reason for balance adjustment', 'error');
+    return;
+  }
+
+  const db = getLocalDB();
+  const u = db.users.find(u => u.uid === uid);
+  if (u) {
+    const oldDetails = `Recharge: ৳${u.rechargeWallet}, Balance: ৳${u.balanceWallet}`;
+    u.rechargeWallet = newRecharge;
+    u.balanceWallet = newBalance;
+    u.activeVipLevel = newVip;
+    u.status = newStatus;
+    saveLocalDB(db);
+
+    addAuditLog('ADJUST_USER', `User ${u.phone} adjusted. Reason: "${reason}". New: Recharge ৳${newRecharge}, Balance ৳${newBalance}, VIP ${newVip}. Prior: ${oldDetails}`);
+    showToast('User updated successfully', 'success');
+  }
+
+  closeEditUserModal();
+  refreshAllData();
+}
+
+function toggleUserBan(uid) {
+  const db = getLocalDB();
+  const u = db.users.find(u => u.uid === uid);
+  if (u) {
+    u.status = u.status === 'banned' ? 'active' : 'banned';
+    saveLocalDB(db);
+    addAuditLog(u.status === 'banned' ? 'BAN_USER' : 'UNBAN_USER', `Account ${u.phone} marked as ${u.status}`);
+    showToast(`User ${u.status === 'banned' ? 'banned' : 'unbanned'}`, 'info');
+    refreshAllData();
+  }
+}
+
+// DEPOSITS MANAGEMENT
+function filterDeposits(status) {
+  currentDepositFilter = status;
+  document.querySelectorAll('.dep-filter-btn').forEach(btn => {
+    if (btn.dataset.status === status) {
+      btn.className = `dep-filter-btn px-4 py-1.5 rounded-full text-xs font-bold text-white ${status === 'pending' ? 'bg-amber-500' : status === 'approved' ? 'bg-emerald-600' : 'bg-rose-600'}`;
+    } else {
+      btn.className = 'dep-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600';
+    }
+  });
+  renderDeposits();
+}
+
+function renderDeposits() {
+  const container = document.getElementById('deposits-list-container');
+  const db = getLocalDB();
+  const filtered = db.deposits.filter(d => d.status === currentDepositFilter);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center text-xs text-slate-400">No ${currentDepositFilter} deposits found</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(d => `
+    <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black text-indigo-700">৳${Number(d.amountBDT).toFixed(2)}</span>
+          <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded text-[10px]">${d.paymentMethod}</span>
+          <span class="text-[10px] uppercase font-black px-2 py-0.5 rounded ${d.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : d.status === 'pending' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'}">${d.status}</span>
+        </div>
+        <div class="text-slate-600 mt-1">
+          Sender: <b class="font-mono">${d.senderPhone || 'N/A'}</b> • TrxID: <b class="font-mono bg-slate-100 px-1 py-0.5 rounded text-purple-800">${d.transactionId}</b>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-0.5">
+          User Account: ${d.userPhone} • Date: ${new Date(d.createdAt).toLocaleString()}
+        </div>
+        ${d.proofImage ? `
+          <div class="mt-2 flex items-center gap-2">
+            <span class="text-[10px] text-slate-400 font-bold">Proof Receipt:</span>
+            <img src="${d.proofImage}" onclick="previewReceipt('${d.proofImage}')" class="w-10 h-10 rounded-xl object-cover border border-purple-200 cursor-pointer shadow-xs hover:scale-105 transition-transform" title="Click to enlarge receipt">
+            <button onclick="previewReceipt('${d.proofImage}')" class="text-[10px] font-bold text-purple-600 hover:underline">View Receipt 🔍</button>
+          </div>
+        ` : ''}
+      </div>
+
+      ${d.status === 'pending' ? `
+        <div class="flex items-center gap-2">
+          <button onclick="approveDeposit('${d.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl transition-colors">
+            ✓ Approve & Credit
+          </button>
+          <button onclick="rejectDeposit('${d.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-2 rounded-xl transition-colors">
+            ✕ Reject
+          </button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+function approveDeposit(depId) {
+  const db = getLocalDB();
+  const dep = db.deposits.find(d => d.id === depId);
+  if (!dep || dep.status !== 'pending') return;
+
+  dep.status = 'approved';
+  const u = db.users.find(u => u.uid === dep.userId);
+  if (u) {
+    u.rechargeWallet = (u.rechargeWallet || 0) + dep.amountBDT;
+    u.totalDeposit = (u.totalDeposit || 0) + dep.amountBDT;
+  }
+
+  saveLocalDB(db);
+  addAuditLog('APPROVE_DEPOSIT', `Deposit ${dep.transactionId} (৳${dep.amountBDT}) approved for ${dep.userPhone}`);
+  showToast('Deposit approved and credited to Recharge Wallet', 'success');
+  refreshAllData();
+}
+
+function rejectDeposit(depId) {
+  const db = getLocalDB();
+  const dep = db.deposits.find(d => d.id === depId);
+  if (!dep || dep.status !== 'pending') return;
+
+  dep.status = 'rejected';
+  saveLocalDB(db);
+  addAuditLog('REJECT_DEPOSIT', `Deposit ${dep.transactionId} (৳${dep.amountBDT}) rejected`);
+  showToast('Deposit rejected', 'info');
+  refreshAllData();
+}
+
+// WITHDRAWALS MANAGEMENT
+function filterWithdrawals(status) {
+  currentWithdrawalFilter = status;
+  document.querySelectorAll('.wd-filter-btn').forEach(btn => {
+    if (btn.dataset.status === status) {
+      btn.className = `wd-filter-btn px-4 py-1.5 rounded-full text-xs font-bold text-white ${status === 'pending' ? 'bg-rose-500' : status === 'approved' ? 'bg-emerald-600' : 'bg-slate-700'}`;
+    } else {
+      btn.className = 'wd-filter-btn px-4 py-1.5 rounded-full text-xs font-bold bg-slate-100 text-slate-600';
+    }
+  });
+  renderWithdrawals();
+}
+
+function renderWithdrawals() {
+  const container = document.getElementById('withdrawals-list-container');
+  const db = getLocalDB();
+  const filtered = db.withdrawals.filter(w => w.status === currentWithdrawalFilter);
+
+  if (filtered.length === 0) {
+    container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center text-xs text-slate-400">No ${currentWithdrawalFilter} withdrawals found</div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(w => `
+    <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black text-rose-600">৳${Number(w.amountBDT).toFixed(2)}</span>
+          <span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">${w.paymentMethod}</span>
+          <span class="text-[10px] uppercase font-black px-2 py-0.5 rounded ${w.status === 'approved' ? 'bg-emerald-100 text-emerald-700' : w.status === 'pending' ? 'bg-rose-100 text-rose-700' : 'bg-slate-200 text-slate-600'}">${w.status}</span>
+        </div>
+        <div class="text-slate-600 mt-1">
+          Recipient Account: <b class="font-mono bg-slate-100 px-1.5 py-0.5 rounded">${w.accountNumber}</b>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-0.5">
+          User Account: ${w.userPhone} • Requested: ${new Date(w.createdAt).toLocaleString()}
+        </div>
+      </div>
+
+      ${w.status === 'pending' ? `
+        <div class="flex items-center gap-2">
+          <button onclick="approveWithdrawal('${w.id}')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl transition-colors">
+            ✓ Approve Payout
+          </button>
+          <button onclick="rejectWithdrawal('${w.id}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-3 py-2 rounded-xl transition-colors">
+            ✕ Reject & Refund
+          </button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+function approveWithdrawal(wdId) {
+  const db = getLocalDB();
+  const w = db.withdrawals.find(w => w.id === wdId);
+  if (!w || w.status !== 'pending') return;
+
+  w.status = 'approved';
+  saveLocalDB(db);
+  addAuditLog('APPROVE_WITHDRAWAL', `Withdrawal ৳${w.amountBDT} approved for ${w.accountNumber} (${w.userPhone})`);
+  showToast('Withdrawal marked as approved & sent', 'success');
+  refreshAllData();
+}
+
+function rejectWithdrawal(wdId) {
+  const db = getLocalDB();
+  const w = db.withdrawals.find(w => w.id === wdId);
+  if (!w || w.status !== 'pending') return;
+
+  w.status = 'rejected';
+  // Refund reserved funds back into user's Balance Wallet
+  const u = db.users.find(u => u.uid === w.userId);
+  if (u) {
+    u.balanceWallet = (u.balanceWallet || 0) + w.amountBDT;
+  }
+
+  saveLocalDB(db);
+  addAuditLog('REJECT_WITHDRAWAL', `Withdrawal ৳${w.amountBDT} rejected; refunded to user ${w.userPhone}`);
+  showToast('Withdrawal rejected. Funds refunded to user balance.', 'info');
+  refreshAllData();
+}
+
+// RECEIPT ZOOM MODAL
+function previewReceipt(imgUrl) {
+  const modal = document.getElementById('modal-receipt-preview');
+  const img = document.getElementById('receipt-preview-img');
+  if (modal && img) {
+    img.src = imgUrl;
+    modal.classList.remove('hidden');
+  }
+}
+
+function closeReceiptModal() {
+  const modal = document.getElementById('modal-receipt-preview');
+  if (modal) modal.classList.add('hidden');
+}
+
+// INVESTMENTS MANAGEMENT
+function renderInvestments() {
+  const container = document.getElementById('admin-investments-list');
+  if (!container) return;
+  const db = getLocalDB();
+  const allInvs = db.investments || [];
+
+  if (allInvs.length === 0) {
+    container.innerHTML = `<div class="bg-white rounded-3xl p-8 text-center text-xs text-slate-400">No active or historical investments found</div>`;
+    return;
+  }
+
+  container.innerHTML = allInvs.map(inv => `
+    <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black text-purple-700">৳${Number(inv.amountBDT).toFixed(2)}</span>
+          <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded text-[10px]">${inv.packageName}</span>
+          <span class="text-[10px] uppercase font-black px-2 py-0.5 rounded ${inv.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}">${inv.status}</span>
+        </div>
+        <div class="text-slate-600 mt-1">
+          Daily Yield: <b class="font-mono text-emerald-600">+৳${Number(inv.dailyReturnBDT).toFixed(2)}/day</b> • Cycle: <b>${inv.cycleDays} days</b>
+        </div>
+        <div class="text-[10px] text-slate-400 mt-0.5">
+          User Account: <b class="font-mono">${inv.userPhone || inv.userId}</b> • Purchased: ${new Date(inv.purchasedAt).toLocaleString()}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// PACKAGES MANAGEMENT
+const DEFAULT_SYSTEM_PACKAGES = [
+  { id: 'hope-rices-1', name: 'Hope rices 1', price: 10, dailyReturn: 0.90, cycleDays: 30, totalReturn: 27, category: 'Fixed Yields' },
+  { id: 'hope-rices-2', name: 'Hope rices 2', price: 50, dailyReturn: 2.93, cycleDays: 30, totalReturn: 88, category: 'Fixed Yields' },
+  { id: 'duck-farm', name: 'DUCK FARM', price: 100, dailyReturn: 4.88, cycleDays: 40, totalReturn: 195, category: 'Limited Offers' },
+  { id: 'flex-stream-1', name: 'MXQ Stream Flex', price: 30, dailyReturn: 1.25, cycleDays: 20, totalReturn: 25, category: 'Flexible Rates' }
+];
+
+function getAdminPackages() {
+  const stored = localStorage.getItem('ee_admin_packages');
+  return stored ? JSON.parse(stored) : DEFAULT_SYSTEM_PACKAGES;
+}
+
+function saveAdminPackages(pkgs) {
+  localStorage.setItem('ee_admin_packages', JSON.stringify(pkgs));
+}
+
+function renderPackages() {
+  const container = document.getElementById('admin-packages-list');
+  if (!container) return;
+  const packages = getAdminPackages();
+
+  container.innerHTML = packages.map(pkg => `
+    <div class="bg-white rounded-3xl p-4 card-shadow border border-slate-100 flex items-center justify-between text-xs">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="font-black text-slate-800 text-sm">${pkg.name}</span>
+          <span class="bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded text-[10px]">${pkg.category}</span>
+        </div>
+        <div class="text-slate-500 mt-1">
+          Price: <b class="text-purple-700">৳${pkg.price}</b> • Daily: <b class="text-emerald-600">+৳${pkg.dailyReturn}</b> • Cycle: <b>${pkg.cycleDays}d</b> • Total: <b class="text-amber-500">৳${pkg.totalReturn || (pkg.dailyReturn * pkg.cycleDays).toFixed(2)}</b>
+        </div>
+      </div>
+      <button onclick="deletePackage('${pkg.id}')" class="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-3 py-1.5 rounded-xl transition-colors">
+        Delete
+      </button>
+    </div>
+  `).join('');
+}
+
+function handleAddNewPackage(e) {
+  e.preventDefault();
+  const name = document.getElementById('new-pkg-name').value.trim();
+  const price = parseFloat(document.getElementById('new-pkg-price').value);
+  const daily = parseFloat(document.getElementById('new-pkg-daily').value);
+  const cycle = parseInt(document.getElementById('new-pkg-cycle').value);
+  const cat = document.getElementById('new-pkg-category').value;
+
+  const packages = getAdminPackages();
+  const newPkg = {
+    id: 'pkg_' + Date.now(),
+    name: name,
+    price: price,
+    dailyReturn: daily,
+    cycleDays: cycle,
+    totalReturn: daily * cycle,
+    category: cat
+  };
+  packages.push(newPkg);
+  saveAdminPackages(packages);
+
+  addAuditLog('CREATE_PACKAGE', `New package added: ${name} (Price: ৳${price}, Daily: ৳${daily}, Cycle: ${cycle}d)`);
+  showToast(`Package "${name}" created successfully!`, 'success');
+
+  document.getElementById('new-pkg-name').value = '';
+  document.getElementById('new-pkg-price').value = '';
+  document.getElementById('new-pkg-daily').value = '';
+  document.getElementById('new-pkg-cycle').value = '';
+
+  renderPackages();
+}
+
+function deletePackage(pkgId) {
+  let packages = getAdminPackages();
+  const target = packages.find(p => p.id === pkgId);
+  packages = packages.filter(p => p.id !== pkgId);
+  saveAdminPackages(packages);
+  addAuditLog('DELETE_PACKAGE', `Package ${target ? target.name : pkgId} removed`);
+  showToast('Package deleted', 'info');
+  renderPackages();
+}
+
+// SETTINGS & AUDIT LOGS
+function saveAdminSettings() {
+  const rate = document.getElementById('setting-rate').value;
+  const depPhone = document.getElementById('setting-deposit-phone').value;
+  addAuditLog('UPDATE_SETTINGS', `Settings modified. Exchange Rate: 1 USD = ৳${rate}. Deposit Numbers: ${depPhone}`);
+  showToast('System configuration saved & broadcasted', 'success');
+}
+
+function renderAuditLogs() {
+  const container = document.getElementById('audit-logs-container');
+  const logs = getAuditLogs();
+  if (logs.length === 0) {
+    container.innerHTML = `<div class="text-center py-4 text-slate-400">No audit records recorded yet</div>`;
+    return;
+  }
+  container.innerHTML = logs.map(l => `
+    <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-start justify-between">
+      <div>
+        <div class="font-bold text-slate-800"><span class="bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded text-[10px] font-mono">${l.action}</span> by ${l.adminPhone}</div>
+        <div class="text-slate-600 text-[11px] mt-0.5">${l.details}</div>
+      </div>
+      <span class="text-[10px] text-slate-400 font-mono shrink-0">${new Date(l.timestamp).toLocaleTimeString()}</span>
+    </div>
+  `).join('');
+}
+
+// Initialize admin session if stored
+window.addEventListener('DOMContentLoaded', () => {
+  const session = localStorage.getItem('ee_admin_session');
+  if (session) {
+    try {
+      currentAdmin = JSON.parse(session);
+      openDashboard();
+    } catch(e) {}
+  }
+});
+</script>
+</body>
+</html>
